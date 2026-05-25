@@ -51,8 +51,8 @@ if 'materiales' not in st.session_state:
     st.session_state.materiales = cargar_datos('materiales.json', dict, {
         "Cartulina Escolar": {"Tipo": "Pieza (Área)", "Ancho": 50.0, "Alto": 70.0, "Costo": 0.50, "Precio": 1.00, "Marca": "Genérica", "Fecha": hoy},
         "Silicón (Barra)": {"Tipo": "Unidad (Cantidad)", "Ancho": 1.0, "Alto": 1.0, "Costo": 0.10, "Precio": 0.25, "Marca": "Genérica", "Fecha": hoy},
-        "Impresion en Papel Fotográfico": {"Tipo": "Unidad (Cantidad)", "Ancho": 1.0, "Alto": 1.0, "Costo": 0.08, "Precio": 0.50, "Marca": "Genérica", "Fecha": hoy},
-        "Impresion en Papel Fotográfico Carta": {"Tipo": "Unidad (Cantidad)", "Ancho": 1.0, "Alto": 1.0, "Costo": 0.08, "Precio": 0.50, "Marca": "Genérica", "Fecha": hoy}
+        "Impresion en Papel Fotografico": {"Tipo": "Unidad (Cantidad)", "Ancho": 1.0, "Alto": 1.0, "Costo": 0.08, "Precio": 0.50, "Marca": "Genérica", "Fecha": hoy},
+        "Impresion en Papel Fotografico Carta": {"Tipo": "Unidad (Cantidad)", "Ancho": 1.0, "Alto": 1.0, "Costo": 0.08, "Precio": 0.50, "Marca": "Genérica", "Fecha": hoy}
     })
 
 if 'productos' not in st.session_state:
@@ -81,7 +81,6 @@ opciones_menu = [
 if 'menu_actual' not in st.session_state:
     st.session_state.menu_actual = "🏠 Menú Principal"
 
-# Generación del menú con espaciado calibrado de 4 espacios estrictos
 cols_nav = st.columns(5)
 for idx, opcion in enumerate(opciones_menu):
     with cols_nav[idx]:
@@ -107,7 +106,7 @@ if st.session_state.menu_actual == "🏠 Menú Principal":
 # 🧮 VISTA: 1- CREAR PRESUPUESTO
 # ==========================================
 elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
-    st.markdown("<h2 style='color: #e9769d;'>🧮 Crear Presupuesto de Production</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #e9769d;'>🧮 Crear Presupuesto de Producción</h2>", unsafe_allow_html=True)
     st.info("Módulo de presupuestos listo para operar.")
 
 # ==========================================
@@ -118,7 +117,7 @@ elif st.session_state.menu_actual == "➕ 2- Crear Material":
     st.info("Módulo de registro e ingreso de nuevos materiales configurado.")
 
 # ==========================================
-# 🎒 VISTA: 3- PANEL DE CONTROL (CON MEDIDAS EN FILA)
+# 🎒 VISTA: 3- PANEL DE CONTROL (REESTRUCTURADO SIN BUCLE INESTABLE)
 # ==========================================
 elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
     st.markdown("<h2 style='color: #e9769d;'>🎒 Panel de Control de Inventario</h2>", unsafe_allow_html=True)
@@ -126,11 +125,14 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
     if not st.session_state.materiales:
         st.info("No hay materiales registrados.")
     else:
+        # Creamos una lista ordenada fija de nombres para mapear los índices
+        nombres_materiales = list(st.session_state.materiales.keys())
         lista_datos_tabla = []
-        for n, d in st.session_state.materiales.items():
+        
+        for n in nombres_materiales:
+            d = st.session_state.materiales[n]
             porcentaje_ganancia_mat = (((d['Precio'] - d['Costo']) / d['Precio']) * 100) if d['Precio'] > 0 else 0.0
             
-            # Formateo dinámico de las dimensiones reales
             if d.get("Tipo") == "Pieza (Área)":
                 medida_str = f"{d.get('Ancho', 0.0)} x {d.get('Alto', 0.0)} cm"
             else:
@@ -143,41 +145,4 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                 "Marca": d.get("Marca", "Genérica"),
                 "Costo Base": f"${d['Costo']:.2f}",
                 "Precio Base": f"${d['Precio']:.2f}",
-                "Ganancia (%)": f"{porcentaje_ganancia_mat:.1f}%",
-                "Última Actualización": d.get("Fecha", "Original"),
-                "👁️ Ver": False,  
-                "✏️ Editar": False
-            })
-            
-        df_panel = pd.DataFrame(lista_datos_tabla)
-        
-        # Data editor interactivo con checkboxes al final
-        edicion_tabla = st.data_editor(
-            df_panel,
-            column_config={
-                "👁️ Ver": st.column_config.CheckboxColumn("👁️ Ver", help="Ver resumen técnico y descargar archivo PDF", default=False),
-                "✏️ Editar": st.column_config.CheckboxColumn("✏️ Editar", help="Modificar rápidamente costos y dimensiones", default=False)
-            },
-            disabled=["Material", "Tipo", "Medidas (cm)", "Marca", "Costo Base", "Precio Base", "Ganancia (%)", "Última Actualización"],
-            use_container_width=True,
-            key="editor_tabla_panel"
-        )
-        
-        # Monitoreo de interacción por fila
-        for index, row in edicion_tabla.iterrows():
-            nombre_mat_fila = row["Material"]
-            if row["👁️ Ver"] == True:
-                st.session_state.accion_material = "ver"
-                st.session_state.material_focalizado = nombre_mat_fila
-                break
-            elif row["✏️ Editar"] == True:
-                st.session_state.accion_material = "editar"
-                st.session_state.material_focalizado = nombre_mat_fila
-                break
-
-        # ACCIÓN INTERNA A: VER FICHA TÉCNICA GENERAL Y DESCARGA DE REPORTE
-        if st.session_state.accion_material == "ver" and st.session_state.material_focalizado in st.session_state.materiales:
-            mat_foc = st.session_state.material_focalizado
-            info_mat = st.session_state.materiales[mat_foc]
-            
-            ganancia_dola
+                "Ganancia (%)": f"{porcentaje_ganancia_
