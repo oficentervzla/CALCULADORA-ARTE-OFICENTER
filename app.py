@@ -88,6 +88,9 @@ for idx, opcion in enumerate(opciones_menu):
         tipo_estilo = "primary" if es_activo else "secondary"
         if st.button(opcion, key=f"nav_sup_{idx}", use_container_width=True, type=tipo_estilo):
             st.session_state.menu_actual = opcion
+            # Al cambiar de pestaña principal limpiamos focos anteriores para evitar residuos visuales
+            st.session_state.accion_material = None
+            st.session_state.material_focalizado = None
             st.rerun()
 
 st.divider()
@@ -117,7 +120,7 @@ elif st.session_state.menu_actual == "➕ 2- Crear Material":
     st.info("Módulo de registro e ingreso de nuevos materiales configurado.")
 
 # ==========================================
-# 🎒 VISTA: 3- PANEL DE CONTROL (REESTRUCTURADO SIN BUCLE INESTABLE)
+# 🎒 VISTA: 3- PANEL DE CONTROL (SINTAXIS Y ACCIONES REPARADAS)
 # ==========================================
 elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
     st.markdown("<h2 style='color: #e9769d;'>🎒 Panel de Control de Inventario</h2>", unsafe_allow_html=True)
@@ -125,7 +128,6 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
     if not st.session_state.materiales:
         st.info("No hay materiales registrados.")
     else:
-        # Creamos una lista ordenada fija de nombres para mapear los índices
         nombres_materiales = list(st.session_state.materiales.keys())
         lista_datos_tabla = []
         
@@ -145,4 +147,21 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                 "Marca": d.get("Marca", "Genérica"),
                 "Costo Base": f"${d['Costo']:.2f}",
                 "Precio Base": f"${d['Precio']:.2f}",
-                "Ganancia (%)": f"{porcentaje_ganancia_
+                "Ganancia (%)": f"{porcentaje_ganancia_mat:.1f}%",
+                "Última Actualización": d.get("Fecha", "Original"),
+                "👁️ Ver": False,  
+                "✏️ Editar": False
+            })
+            
+        df_panel = pd.DataFrame(lista_datos_tabla)
+        
+        # Renderizado de la tabla con los componentes Checkbox fijos
+        edicion_tabla = st.data_editor(
+            df_panel,
+            column_config={
+                "👁️ Ver": st.column_config.CheckboxColumn("👁️ Ver", help="Ver resumen técnico", default=False),
+                "✏️ Editar": st.column_config.CheckboxColumn("✏️ Editar", help="Modificar costos y dimensiones", default=False)
+            },
+            disabled=["Material", "Tipo", "Medidas (cm)", "Marca", "Costo Base", "Precio Base", "Ganancia (%)", "Última Actualización"],
+            use_container_width=True,
+            key="editor_tabla_panel"
