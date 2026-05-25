@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime
 
-# 1. CONFIGURACIÓN DE PÁGINA (Debe ser la primera instrucción de Streamlit)
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Sistema Art Center", layout="wide", page_icon="🎨")
 
 # 2. DISEÑO Y ESTILOS CSS ENFOCADOS EN TU MARCA
@@ -16,7 +16,6 @@ st.markdown("""
         .titulo-principal { color: #e9769d !important; font-size: 50px; font-weight: bold; margin-bottom: 5px; }
         .frase-principal { color: #74b7d5 !important; font-size: 28px; font-style: italic; font-weight: bold; margin-bottom: 30px; }
         
-        /* Tarjetas de interacción de Gestión */
         .tarjeta-ver {
             background-color: #f4fafc; padding: 20px; border-radius: 12px;
             border: 2px solid #74b7d5; margin-top: 15px;
@@ -51,8 +50,7 @@ if 'materiales' not in st.session_state:
     st.session_state.materiales = cargar_datos('materiales.json', dict, {
         "Cartulina Escolar": {"Tipo": "Pieza (Área)", "Ancho": 50.0, "Alto": 70.0, "Costo": 0.50, "Precio": 1.00, "Marca": "Genérica", "Fecha": hoy},
         "Silicón (Barra)": {"Tipo": "Unidad (Cantidad)", "Ancho": 1.0, "Alto": 1.0, "Costo": 0.10, "Precio": 0.25, "Marca": "Genérica", "Fecha": hoy},
-        "Impresion en Papel Fotografico": {"Tipo": "Unidad (Cantidad)", "Ancho": 1.0, "Alto": 1.0, "Costo": 0.08, "Precio": 0.50, "Marca": "Genérica", "Fecha": hoy},
-        "Impresion en Papel Fotografico Carta": {"Tipo": "Unidad (Cantidad)", "Ancho": 1.0, "Alto": 1.0, "Costo": 0.08, "Precio": 0.50, "Marca": "Genérica", "Fecha": hoy}
+        "Impresion en Papel Fotografico": {"Tipo": "Unidad (Cantidad)", "Ancho": 1.0, "Alto": 1.0, "Costo": 0.08, "Precio": 0.50, "Marca": "Genérica", "Fecha": hoy}
     })
 
 if 'productos' not in st.session_state:
@@ -69,7 +67,7 @@ if 'accion_material' not in st.session_state:
 if 'material_focalizado' not in st.session_state:
     st.session_state.material_focalizado = None
 
-# 5. CONTROLADOR CENTRAL DE NAVEGACIÓN (BOTONES SUPERIORES)
+# 5. CONTROLADOR CENTRAL DE NAVEGACIÓN
 opciones_menu = [
     "🏠 Menú Principal", 
     "🧮 1- Crear Presupuesto", 
@@ -103,23 +101,158 @@ if st.session_state.menu_actual == "🏠 Menú Principal":
     
     st.markdown("### 🇻🇪 Control Cambiario")
     st.session_state.tasa_bcv = st.number_input("Tasa BCV del día (Bs.)", min_value=1.0, value=float(st.session_state.tasa_bcv), step=0.10, key="input_tasa_home")
+    
+    st.write("---")
+    st.markdown("### ⚡ Acceso Rápido")
+    c1, c2, c3, c4 = st.columns(4)
+    if c1.button("🧮 Ir a Calculadora", use_container_width=True):
+        st.session_state.menu_actual = "🧮 1- Crear Presupuesto"
+        st.rerun()
+    if c2.button("➕ Añadir Insumo", use_container_width=True):
+        st.session_state.menu_actual = "➕ 2- Crear Material"
+        st.rerun()
+    if c3.button("🎒 Ver Inventario", use_container_width=True):
+        st.session_state.menu_actual = "🎒 3- Verificar Panel de Materiales"
+        st.rerun()
+    if c4.button("📜 Ver Catálogo", use_container_width=True):
+        st.session_state.menu_actual = "📜 4- Catálogo de Productos Finales"
+        st.rerun()
 
 # ==========================================
-# 🧮 VISTA: 1- CREAR PRESUPUESTO
+# 🧮 VISTA: 1- CREAR PRESUPUESTO (CALCULADORA INTERACTIVA)
 # ==========================================
 elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
-    st.markdown("<h2 style='color: #e9769d;'>🧮 Crear Presupuesto de Production</h2>", unsafe_allow_html=True)
-    st.info("Módulo de presupuestos listo para operar.")
+    st.markdown("<h2 style='color: #e9769d;'>🧮 Calculadora de Producción de Toppers</h2>", unsafe_allow_html=True)
+    
+    if not st.session_state.materiales:
+        st.warning("Primero debes registrar materiales en el inventario.")
+    else:
+        with st.form("form_añadir_item"):
+            st.markdown("### 🛠️ Agregar Insumo al Presupuesto Actual")
+            mat_seleccionado = st.selectbox("Selecciona el Material / Insumo:", list(st.session_state.materiales.keys()))
+            info_m = st.session_state.materiales[mat_seleccionado]
+            
+            if info_m["Tipo"] == "Pieza (Área)":
+                st.caption(f"Formato original de este material: {info_m['Ancho']} x {info_m['Alto']} cm (Área total: {info_m['Ancho']*info_m['Alto']} cm²)")
+                c_p1, c_p2 = st.columns(2)
+                ancho_usar = c_p1.number_input("Ancho a utilizar (cm):", min_value=0.1, value=10.0, step=0.5)
+                alto_usar = c_p2.number_input("Alto a utilizar (cm):", min_value=0.1, value=10.0, step=0.5)
+                cantidad_m = 1
+            else:
+                st.caption("Este material se calcula por unidades físicas enteras.")
+                cantidad_m = st.number_input("Cantidad de unidades a usar:", min_value=1, value=1, step=1)
+                ancho_usar, alto_usar = 1.0, 1.0
+                
+            if st.form_submit_button("➕ Agregar Insumo al Topper"):
+                if info_m["Tipo"] == "Pieza (Área)":
+                    area_total_mat = info_m["Ancho"] * info_m["Alto"]
+                    area_usada = ancho_usar * alto_usar
+                    proporcion = area_usada / area_total_mat
+                    costo_calc = round(info_m["Costo"] * proporcion, 4)
+                    precio_calc = round(info_m["Precio"] * proporcion, 4)
+                    cant_str = f"{ancho_usar}x{alto_usar} cm"
+                else:
+                    costo_calc = round(info_m["Costo"] * cantidad_m, 4)
+                    precio_calc = round(info_m["Precio"] * cantidad_m, 4)
+                    cant_str = f"{cantidad_m} Unid."
+                    
+                st.session_state.items_presupuesto.append({
+                    "Material": mat_seleccionado,
+                    "Cantidad": cant_str,
+                    "Ancho": ancho_usar if info_m["Tipo"] == "Pieza (Área)" else 1.0,
+                    "Alto": alto_usar if info_m["Tipo"] == "Pieza (Área)" else 1.0,
+                    "Costo Calculado": costo_calc,
+                    "Precio Calculado": precio_calc
+                })
+                st.success(f"¡{mat_seleccionado} añadido!")
+                st.rerun()
+
+        # MOSTRAR TABLA DE ITEMS ACTUALES
+        if st.session_state.items_presupuesto:
+            st.markdown("### 📋 Desglose de Materiales del Diseño")
+            df_items = pd.DataFrame(st.session_state.items_presupuesto)
+            st.dataframe(df_items[["Material", "Cantidad", "Costo Calculado", "Precio Calculado"]], use_container_width=True)
+            
+            costo_materiales = sum(item["Costo Calculado"] for item in st.session_state.items_presupuesto)
+            precio_materiales_base = sum(item["Precio Calculado"] for item in st.session_state.items_presupuesto)
+            
+            st.markdown("### 💰 Configuración del Margen de Ganancia del Topper")
+            c_g1, c_g2 = st.columns(2)
+            nombre_topper = c_g1.text_input("Nombre o Modelo del Topper (Ej: Topper Cumpleaños Karol G):", value="Nuevo Topper Creativo")
+            margen_diseño = c_g2.number_input("Margen de Ganancia sobre materiales (%):", min_value=0.0, value=30.0, step=5.0)
+            
+            precio_venta_final = round(precio_materiales_base * (1 + (margen_diseño / 100)), 2)
+            ganancia_neta = round(precio_venta_final - costo_materiales, 2)
+            precio_bs = round(precio_venta_final * st.session_state.tasa_bcv, 2)
+            
+            # PANEL DE RESULTADOS FINALES
+            st.markdown("---")
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Costo Real Materiales", f"${costo_materiales:.2f}")
+            m2.metric("Precio Sugerido ($)", f"${precio_venta_final:.2f}")
+            m3.metric("Precio en Bolívares", f"{precio_bs:.2f} Bs.")
+            m4.metric("Ganancia Neta Limpia", f"${ganancia_neta:.2f}")
+            
+            cb1, cb2 = st.columns(2)
+            if cb1.button("💾 Guardar y Publicar en Catálogo", type="primary", use_container_width=True):
+                st.session_state.productos[nombre_topper] = {
+                    "Materiales Usados": st.session_state.items_presupuesto.copy(),
+                    "Margen %": margen_diseño,
+                    "Precio Venta $": precio_venta_final,
+                    "Ganancia Neta $": ganancia_neta,
+                    "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
+                }
+                guardar_datos('productos.json', st.session_state.productos)
+                st.success(f"¡El producto '{nombre_topper}' se guardó exitosamente en el Catálogo!")
+                st.session_state.items_presupuesto = []
+                st.rerun()
+                
+            if cb2.button("🗑️ Borrar Presupuesto Actual", use_container_width=True):
+                st.session_state.items_presupuesto = []
+                st.rerun()
 
 # ==========================================
-# ➕ VISTA: 2- CREAR MATERIAL
+# ➕ VISTA: 2- CREAR MATERIAL (FORMULARIO OPERATIVO)
 # ==========================================
 elif st.session_state.menu_actual == "➕ 2- Crear Material":
     st.markdown("<h2 style='color: #e9769d;'>➕ Registrar Nuevo Insumo / Material</h2>", unsafe_allow_html=True)
-    st.info("Módulo de registro e ingreso de nuevos materiales configurado.")
+    
+    with st.form("form_crear_material_nuevo"):
+        nombre_m = st.text_input("Nombre del Material (Ej: Cartulina Metalizada Dorada):")
+        tipo_m = st.radio("Método de cálculo en taller:", ["Pieza (Área)", "Unidad (Cantidad)"])
+        
+        c_m1, c_m2 = st.columns(2)
+        costo_m = c_m1.number_input("Costo de compra del proveedor ($):", min_value=0.01, value=1.00, step=0.10, format="%.2f")
+        precio_m = c_m2.number_input("Precio base de venta asignado ($):", min_value=0.01, value=2.00, step=0.10, format="%.2f")
+        
+        marca_m = st.text_input("Marca / Proveedor del material:", value="Genérica")
+        
+        ancho_m, alto_m = 1.0, 1.0
+        if tipo_m == "Pieza (Área)":
+            st.markdown("#### 📐 Dimensiones de la pieza original completa")
+            c_d1, c_d2 = st.columns(2)
+            ancho_m = c_d1.number_input("Ancho original (cm):", min_value=1.0, value=50.0, step=1.0)
+            alto_m = c_d2.number_input("Alto original (cm):", min_value=1.0, value=70.0, step=1.0)
+            
+        if st.form_submit_button("💾 Registrar Insumo en Inventario", type="primary"):
+            if not nombre_m.strip():
+                st.error("Por favor introduce un nombre válido para el material.")
+            else:
+                st.session_state.materiales[nombre_m] = {
+                    "Tipo": tipo_m,
+                    "Ancho": float(ancho_m),
+                    "Alto": float(alto_m),
+                    "Costo": float(costo_m),
+                    "Precio": float(precio_m),
+                    "Marca": marca_m,
+                    "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
+                }
+                guardar_datos('materiales.json', st.session_state.materiales)
+                st.success(f"¡Material '{nombre_m}' registrado correctamente!")
+                st.balloons()
 
 # ==========================================
-# 🎒 VISTA: 3- PANEL DE CONTROL (REPARADO)
+# 🎒 VISTA: 3- PANEL DE CONTROL (TABLA INTERACTIVA)
 # ==========================================
 elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
     st.markdown("<h2 style='color: #e9769d;'>🎒 Panel de Control de Inventario</h2>", unsafe_allow_html=True)
@@ -132,199 +265,6 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
         
         for n in nombres_materiales:
             d = st.session_state.materiales[n]
-            
-            # Cálculo seguro de la ganancia
             costo_base = d.get('Costo', 0.0)
             precio_base = d.get('Precio', 0.0)
-            porcentaje_ganancia_mat = (((precio_base - costo_base) / precio_base) * 100) if precio_base > 0 else 0.0
-            
-            if d.get("Tipo") == "Pieza (Área)":
-                medida_str = f"{d.get('Ancho', 0.0)} x {d.get('Alto', 0.0)} cm"
-            else:
-                medida_str = "N/A (Unidad)"
-                
-            lista_datos_tabla.append({
-                "Material": n,
-                "Tipo": d.get("Tipo", "Unidad (Cantidad)"),
-                "Medidas (cm)": medida_str,
-                "Marca": d.get("Marca", "Genérica"),
-                "Costo Base": f"${costo_base:.2f}",
-                "Precio Base": f"${precio_base:.2f}",
-                "Ganancia (%)": f"{porcentaje_ganancia_mat:.1f}%",
-                "Última Actualización": d.get("Fecha", "Original"),
-                "👁️ Ver": False,  
-                "✏️ Editar": False
-            })
-            
-        df_panel = pd.DataFrame(lista_datos_tabla)
-        
-        # Columnas deshabilitadas para edición directa
-        columnas_bloqueadas = ["Material", "Tipo", "Medidas (cm)", "Marca", "Costo Base", "Precio Base", "Ganancia (%)", "Última Actualización"]
-        
-        # Configuración explícita de las columnas interactivas
-        configuracion_columnas = {
-            "👁️ Ver": st.column_config.CheckboxColumn("👁️ Ver", help="Ver resumen técnico", default=False),
-            "✏️ Editar": st.column_config.CheckboxColumn("✏️ Editar", help="Modificar costos y dimensiones", default=False)
-        }
-        
-        # Renderizado limpio del editor de datos
-        edicion_tabla = st.data_editor(
-            df_panel,
-            column_config=configuracion_columnas,
-            disabled=columnas_bloqueadas,
-            use_container_width=True,
-            key="editor_tabla_panel"
-        )
-        
-        # DETECTAR ACCIONES INMEDIATAS
-        if "editor_tabla_panel" in st.session_state:
-            estado_editor = st.session_state.editor_tabla_panel
-            if estado_editor.get("edited_rows"):
-                filas_cambiadas = estado_editor["edited_rows"]
-                for idx_fila_str, cambios in filas_cambiadas.items():
-                    idx_fila = int(idx_fila_str)
-                    nombre_mat_fila = nombres_materiales[idx_fila]
-                    
-                    if cambios.get("👁️ Ver") is True:
-                        st.session_state.accion_material = "ver"
-                        st.session_state.material_focalizado = nombre_mat_fila
-                        st.rerun()
-                    elif cambios.get("✏️ Editar") is True:
-                        st.session_state.accion_material = "editar"
-                        st.session_state.material_focalizado = nombre_mat_fila
-                        st.rerun()
-
-        # BLOQUE DE ACCIÓN A: VER DETALLES
-        if st.session_state.accion_material == "ver" and st.session_state.material_focalizado in st.session_state.materiales:
-            mat_foc = st.session_state.material_focalizado
-            info_mat = st.session_state.materiales[mat_foc]
-            
-            ganancia_dolares = info_mat["Precio"] - info_mat["Costo"]
-            pct_ganancia = (ganancia_dolares / info_mat["Precio"] * 100) if info_mat["Precio"] > 0 else 0.0
-            
-            productos_vinculados = [p_name for p_name, p_detalles in st.session_state.productos.items() 
-                                    if any(item["Material"] == mat_foc for item in p_detalles.get("Materiales Usados", []))]
-            vinculos_str = ", ".join(productos_vinculados) if productos_vinculados else "Ninguno (Insumo libre)"
-            
-            st.markdown(f"""
-                <div class="tarjeta-ver">
-                    <h3 style="color:#74b7d5; text-align:left; margin:0;">📋 Resumen Técnico: {mat_foc}</h3>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            c_v1, c_v2, c_v3 = st.columns(3)
-            with c_v1:
-                st.markdown("**⚙️ Características:**")
-                st.write(f"• **Tipo de medida:** {info_mat['Tipo']}")
-                st.write(f"• **Marca:** {info_mat.get('Marca', 'Genérica')}")
-                if info_mat["Tipo"] == "Pieza (Área)":
-                    st.write(f"• **Formato:** {info_mat['Ancho']}cm x {info_mat['Alto']}cm")
-            with c_v2:
-                st.markdown("**💰 Estructura Financiera:**")
-                st.write(f"• **Costo Proveedor:** ${info_mat['Costo']:.2f}")
-                st.write(f"• **Precio Venta:** ${info_mat['Precio']:.2f}")
-                st.write(f"• **Utilidad:** ${ganancia_dolares:.2f} ({pct_ganancia:.1f}%)")
-            with c_v3:
-                st.markdown("**🎒 Vínculos:**")
-                st.write(f"• **Usado en:** `{vinculos_str}`")
-                st.write(f"• **Actualizado:** {info_mat.get('Fecha', 'Original')}")
-            
-            c_btn_v1, c_btn_v2, c_btn_v3 = st.columns([1, 1, 3])
-            with c_btn_v1:
-                medida_pdf = f"{info_mat.get('Ancho')}x{info_mat.get('Alto')} cm" if info_mat["Tipo"] == "Pieza (Área)" else "N/A"
-                data_pdf_simulada = (
-                    f"FICHA TÉCNICA - ART CENTER\n\nMaterial: {mat_foc}\nTipo: {info_mat['Tipo']}\n"
-                    f"Medidas: {medida_pdf}\nMarca: {info_mat.get('Marca', 'Genérica')}\n"
-                    f"Costo: ${info_mat['Costo']:.2f}\nPrecio: ${info_mat['Precio']:.2f}\nMargen: {pct_ganancia:.1f}%"
-                )
-                st.download_button("📥 Descargar Info", data=data_pdf_simulada, file_name=f"Ficha_{mat_foc.replace(' ', '_')}.txt", mime="text/plain", use_container_width=True)
-            with c_btn_v2:
-                if st.button("✏️ Editar Insumo", key="btn_switch_edit"):
-                    st.session_state.accion_material = "editar"
-                    st.rerun()
-            with c_btn_v3:
-                if st.button("❌ Cerrar Ficha", key="btn_close_v"):
-                    st.session_state.accion_material = None
-                    st.session_state.material_focalizado = None
-                    st.rerun()
-
-        # BLOQUE DE ACCIÓN B: FORMULARIO DE EDICIÓN RAPIDA
-        elif st.session_state.accion_material == "editar" and st.session_state.material_focalizado in st.session_state.materiales:
-            mat_foc = st.session_state.material_focalizado
-            info_mat = st.session_state.materiales[mat_foc]
-            
-            st.markdown(f"""
-                <div class="tarjeta-editar">
-                    <h3 style="color:#e9769d; text-align:left; margin:0;">✏️ Modificación Rápida: {mat_foc}</h3>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            c_e1, c_e2, c_e3 = st.columns(3)
-            nuevo_costo = c_e1.number_input("Costo Proveedor ($)", min_value=0.0, value=float(info_mat["Costo"]), format="%.2f", key="edit_c_tabla")
-            nuevo_precio = c_e2.number_input("Precio Público ($)", min_value=0.0, value=float(info_mat["Precio"]), format="%.2f", key="edit_p_tabla")
-            nueva_marca = c_e3.text_input("Marca", value=info_mat.get("Marca", "Genérica"), key="edit_m_tabla")
-            
-            if info_mat["Tipo"] == "Pieza (Área)":
-                c_m1, c_m2 = st.columns(2)
-                nuevo_ancho = c_m1.number_input("Ancho (cm)", min_value=1.0, value=float(info_mat.get("Ancho", 1.0)), key="edit_ancho_tabla")
-                nuevo_alto = c_m2.number_input("Alto (cm)", min_value=1.0, value=float(info_mat.get("Alto", 1.0)), key="edit_alto_tabla")
-            
-            actualizar_cadena = st.checkbox("Recalcular costos en Toppers vinculados", value=True)
-            
-            c_btn_e1, c_btn_e2 = st.columns([1, 4])
-            with c_btn_e1:
-                if st.button("💾 Guardar", key="btn_save_e", type="primary", use_container_width=True):
-                    if actualizar_cadena:
-                        for p_key, p_val in st.session_state.productos.items():
-                            cambiado = False
-                            for item in p_val.get("Materiales Usados", []):
-                                if item["Material"] == mat_foc:
-                                    if info_mat["Tipo"] == "Pieza (Área)":
-                                        area_tot = nuevo_ancho * nuevo_alto
-                                        prop = (item["Ancho"] * item["Alto"]) / area_tot if area_tot > 0 else 0
-                                        item["Costo Calculado"] = round(nuevo_costo * prop, 4)
-                                        item["Precio Calculado"] = round(nuevo_precio * prop, 4)
-                                    else:
-                                        item["Costo Calculado"] = round(nuevo_costo * item["Cantidad"], 4)
-                                        item["Precio Calculado"] = round(nuevo_precio * item["Cantidad"], 4)
-                                    cambiado = True
-                            if cambiado:
-                                nuevo_precio_mats = sum(i["Precio Calculado"] for i in p_val["Materiales Usados"])
-                                p_val["Precio Venta $"] = round(nuevo_precio_mats * (1 + (p_val["Margen %"] / 100)), 2)
-                                p_val["Fecha"] = datetime.now().strftime("%Y-%m-%d %H:%M")
-                        guardar_datos('productos.json', st.session_state.productos)
-                    
-                    st.session_state.materiales[mat_foc]["Costo"] = nuevo_costo
-                    st.session_state.materiales[mat_foc]["Precio"] = nuevo_precio
-                    st.session_state.materiales[mat_foc]["Marca"] = nueva_marca
-                    if info_mat["Tipo"] == "Pieza (Área)":
-                        st.session_state.materiales[mat_foc]["Ancho"] = nuevo_ancho
-                        st.session_state.materiales[mat_foc]["Alto"] = nuevo_alto
-                        
-                    st.session_state.materiales[mat_foc]["Fecha"] = datetime.now().strftime("%Y-%m-%d %H:%M")
-                    guardar_datos('materiales.json', st.session_state.materiales)
-                    
-                    st.success("¡Insumo actualizado con éxito!")
-                    st.session_state.accion_material = None
-                    st.session_state.material_focalizado = None
-                    st.rerun()
-            with c_btn_e2:
-                if st.button("❌ Cancelar", key="btn_cancel_e"):
-                    st.session_state.accion_material = None
-                    st.session_state.material_focalizado = None
-                    st.rerun()
-
-# ==========================================
-# 📜 VISTA: 4- CATÁLOGO DE PRODUCTOS FINALES
-# ==========================================
-elif st.session_state.menu_actual == "📜 4- Catálogo de Productos Finales":
-    st.markdown("<h2 style='color: #e9769d;'>📜 Catálogo de Productos Finales Guardados</h2>", unsafe_allow_html=True)
-    
-    if not st.session_state.productos:
-        st.warning("No hay productos guardados en el catálogo.")
-    else:
-        for p_nombre, p_info in list(st.session_state.productos.items()):
-            with st.expander(f"📦 {p_nombre} | Venta: ${p_info.get('Precio Venta $', 0.00)} | {(p_info.get('Precio Venta $', 0.00) * st.session_state.tasa_bcv):.2f} Bs."):
-                st.write(f"**Ganancia Neta Real:** ${p_info.get('Ganancia Neta $', 0.00)}")
-                if "Materiales Usados" in p_info:
-                    st.dataframe(pd.DataFrame(p_info["Materiales Usados"])[["Material", "Cantidad", "Costo Calculado", "Precio Calculado"]], use_container_width=True)
+            porcentaje_ganancia_mat = (((precio_base - costo_base) / precio_base) * 100) if precio_base > 0 else
