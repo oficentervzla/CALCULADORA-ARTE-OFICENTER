@@ -14,7 +14,7 @@ st.markdown("""
         .titulo-principal { color: #e9769d !important; font-size: 50px; font-weight: bold; margin-bottom: 5px; }
         .frase-principal { color: #74b7d5 !important; font-size: 28px; font-style: italic; font-weight: bold; margin-bottom: 30px; }
         
-        /* Tarjetas de información */
+        /* Tarjetas de información y resultados */
         .tarjeta-ver {
             background-color: #f4fafc; padding: 20px; border-radius: 12px;
             border: 2px solid #74b7d5; margin-top: 15px; margin-bottom: 15px;
@@ -22,6 +22,10 @@ st.markdown("""
         .tarjeta-editar {
             background-color: #fff9fb; padding: 20px; border-radius: 12px;
             border: 2px solid #e9769d; margin-top: 15px; margin-bottom: 15px;
+        }
+        .tarjeta-resultado {
+            background-color: #f7fcf8; padding: 20px; border-radius: 12px;
+            border: 2px solid #4caf50; margin-top: 15px; margin-bottom: 15px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -50,11 +54,9 @@ if 'tasa_bcv' not in st.session_state:
 if 'menu_actual' not in st.session_state:
     st.session_state.menu_actual = "🏠 Menú Principal"
 
-# Variables para controlar qué material estamos viendo o editando
-if 'accion_material' not in st.session_state:
-    st.session_state.accion_material = None
-if 'material_focalizado' not in st.session_state:
-    st.session_state.material_focalizado = None
+# Inicializar carrito de presupuesto temporal si no existe
+if 'carrito_presupuesto' not in st.session_state:
+    st.session_state.carrito_presupuesto = []
 
 # --- BARRA DE NAVEGACIÓN SUPERIOR ---
 opciones_menu = [
@@ -72,9 +74,6 @@ for idx, opcion in enumerate(opciones_menu):
         tipo_estilo = "primary" if es_activo else "secondary"
         if st.button(opcion, key=f"nav_sup_{idx}", use_container_width=True, type=tipo_estilo):
             st.session_state.menu_actual = opcion
-            # Al cambiar de pestaña principal, cerramos cualquier edición abierta para que no se tranque
-            st.session_state.accion_material = None
-            st.session_state.material_focalizado = None
             st.rerun()
 
 st.divider()
@@ -88,6 +87,114 @@ if st.session_state.menu_actual == "🏠 Menú Principal":
     
     st.subheader("🇻🇪 Control Cambiario")
     st.session_state.tasa_bcv = st.number_input("Tasa BCV del día (Bs.)", min_value=1.0, value=float(st.session_state.tasa_bcv), step=0.10)
+    
+    st.markdown("---")
+    # Resumen rápido en el inicio
+    c_m1, c_m2 = st.columns(2)
+    c_m1.metric("Materiales en Inventario", len(st.session_state.materiales))
+    c_m2.metric("Productos en Catálogo", len(st.session_state.productos))
+
+# ==========================================
+# 🧮 VISTA: 1- CREAR PRESUPUESTO
+# ==========================================
+elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
+    st.markdown("<h2 style='color: #e9769d;'>🧮 Calculadora de Presupuestos</h2>", unsafe_allow_html=True)
+    
+    if not st.session_state.materiales:
+        st.warning("Primero debes registrar materiales en la pestaña '➕ 2- Crear Material' para poder presupuestar.")
+    else:
+        col_p1, col_p2 = st.columns([1, 1])
+        
+        with col_p1:
+            st.markdown("### 🛒 Agregar Materiales al Diseño")
+            mat_seleccionado = st.selectbox("Selecciona el material:", list(st.session_state.materiales.keys()))
+            info_m = st.session_state.materiales[mat_seleccionado]
+            
+            # Formulario según el tipo de material escogido
+            if info_m["Tipo"] == "Pieza (Área)":
+                st.info(f"Este material se cuenta por área. Tamaño original: {info_m['Ancho']}x{info_m['Alto']} cm.")
+                ancho_usar = st.number_input("Ancho a usar (cm)", min_value=0.1, max_value=float(info_m['Ancho']), value=1.0, step=0.1)
+                alto_usar = st.number_input("Alto a usar (cm)", min_value=0.1, max_value=float(info_m['Alto']), value=1.0, step=0.1)
+                
+                # Calcular costo proporcional del área usada
+                area_total = info_m['Ancho'] * info_m['Alto']
+                area_usar = ancho_usar * alto_usar
+                costo_proporcional = (info_m['Costo'] / area_total) * area_usar
+                precio_proporcional = (info_m['Precio'] / area_total) * area_usar
+                cantidad_items = 1.0
+                descripcion_uso = f"{ancho_usar}x{alto_usar} cm"
+            else:
+                st.info(f"Este material se cuenta por unidades individuales.")
+                cantidad_items = st.number_input("Cantidad de unidades a usar", min_value=1, step=1, value=1)
+                costo_proporcional = info_m['Costo'] * cantidad_items
+                precio_proporcional = info_m['Precio'] * cantidad_items
+                descripcion_uso = f"{cantidad_items} und"
+                
+            if st.button("➕ Añadir este material al presupuesto"):
+                st.session_state.carrito_presupuesto.append({
+                    "Material": mat_seleccionado,
+                    "Uso": descripcion_uso,
+                    "Costo Parcial": round(costo_proporcional, 2),
+                    "Precio Parcial": round(precio_proporcional, 2)
+                })
+                st.success(f"Añadido {mat_seleccionado} correctamente.")
+                st.rerun()
+
+        with col_p2:
+            st.markdown("### 📋 Resumen del Diseño Actual")
+            if not st.session_state.carrito_presupuesto:
+                st.write("El presupuesto está vacío. Añade materiales a la izquierda.")
+                total_costo_materiales = 0.0
+                total_precio_materiales = 0.0
+            else:
+                df_carrito = pd.DataFrame(st.session_state.carrito_presupuesto)
+                st.dataframe(df_carrito, use_container_width=True, hide_index=True)
+                
+                total_costo_materiales = df_carrito["Costo Parcial"].sum()
+                total_precio_materiales = df_carrito["Precio Parcial"].sum()
+                
+                if st.button("🗑️ Vaciar materiales del diseño"):
+                    st.session_state.carrito_presupuesto = []
+                    st.rerun()
+            
+            st.markdown("---")
+            st.markdown("### 🛠️ Mano de Obra y Nombre")
+            nombre_producto = st.text_input("Nombre del Producto Final (Ej: Agenda Personalizada)", placeholder="Dale un nombre al producto...")
+            costo_mano_obra = st.number_input("Costo de Mano de Obra Directa ($)", min_value=0.0, step=0.50, value=0.0)
+            
+            # CÁLCULOS FINALES INTERNOS
+            costo_produccion_total = total_costo_materiales + costo_mano_obra
+            precio_sugerido_tienda = total_precio_materiales + (costo_mano_obra * 2.0) # Margen sugerido sobre la mano de obra
+            ganancia_neta = precio_sugerido_tienda - costo_produccion_total
+            
+            precio_bs = precio_sugerido_tienda * st.session_state.tasa_bcv
+            
+            st.markdown("---")
+            st.markdown(f"""
+                <div class='tarjeta-resultado'>
+                    <h4 style='color:#4caf50; margin:0;'>💰 RESULTADO DE COSTOS</h4>
+                    <p style='margin:5px 0;'>• <b>Costo de Producción:</b> ${costo_produccion_total:.2f}</p>
+                    <p style='margin:5px 0; font-size:20px; color:#e9769d;'>• <b>Precio Venta Sugerido: ${precio_sugerido_tienda:.2f}</b></p>
+                    <p style='margin:5px 0; font-weight:bold; color:#74b7d5;'>• Precio en Bolívares: Bs. {precio_bs:.2f}</p>
+                    <p style='margin:5px 0; font-size:12px; color:gray;'>Ganancia estimada: ${ganancia_neta:.2f}</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("💾 GUARDAR Y CREAR PRODUCTO FINAL"):
+                if not nombre_producto.strip():
+                    st.error("Introduce un nombre para poder registrar el producto terminado.")
+                elif not st.session_state.carrito_presupuesto:
+                    st.error("Debes agregar al menos un material para poder guardar el producto.")
+                else:
+                    st.session_state.productos[nombre_producto] = {
+                        "Costo_Produccion": round(costo_produccion_total, 2),
+                        "Precio_Venta": round(precio_sugerido_tienda, 2),
+                        "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
+                    }
+                    guardar_datos('productos.json', st.session_state.productos)
+                    st.session_state.carrito_presupuesto = [] # Limpiar carrito
+                    st.success(f"🎉 ¡'{nombre_producto}' se ha guardado en el Catálogo de Productos Finales!")
+                    st.rerun()
 
 # ==========================================
 # ➕ VISTA: 2- CREAR MATERIAL
@@ -139,7 +246,7 @@ elif st.session_state.menu_actual == "➕ 2- Crear Material":
                 st.success(f"🎉 ¡Material '{nombre}' registrado con éxito!")
 
 # ==========================================
-# 🎒 VISTA: 3- VERIFICAR PANEL DE MATERIALES (ESTABLE)
+# 🎒 VISTA: 3- VERIFICAR PANEL DE MATERIALES
 # ==========================================
 elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
     st.markdown("<h2 style='color: #e9769d;'>🎒 Panel de Control de Inventario</h2>", unsafe_allow_html=True)
@@ -147,7 +254,6 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
     if not st.session_state.materiales:
         st.info("No hay materiales registrados en el inventario. Ve a la pestaña '➕ 2- Crear Material' para agregar el primero.")
     else:
-        # Generar los datos para la tabla de forma segura
         lista_tabla = []
         for nombre_m, info_m in st.session_state.materiales.items():
             lista_tabla.append({
@@ -161,14 +267,11 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
             })
             
         df_materiales = pd.DataFrame(lista_tabla)
-        
-        # Mostramos la tabla limpia (Sin edición directa interna para que no rompa la navegación)
         st.dataframe(df_materiales, use_container_width=True, hide_index=True)
         
         st.markdown("---")
         st.markdown("### 🛠️ Acciones de Inventario")
         
-        # Selectores externos súper estables para elegir qué hacer
         col_sel1, col_sel2 = st.columns([2, 1])
         with col_sel1:
             material_seleccionado = st.selectbox("Selecciona un material para interactuar:", ["-- Seleccionar --"] + list(st.session_state.materiales.keys()))
@@ -178,14 +281,12 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
         if material_seleccionado != "-- Seleccionar --":
             info_foc = st.session_state.materiales[material_seleccionado]
             
-            # ACCIÓN: VER FICHA
             if accion == "👁️ Ver Ficha":
                 st.markdown(f"""
                     <div class='tarjeta-ver'>
                         <h3 style='color:#74b7d5; text-align:left; margin:0;'>📋 Ficha Técnica: {material_seleccionado}</h3>
                     </div>
                 """, unsafe_allow_html=True)
-                
                 cv1, cv2 = st.columns(2)
                 with cv1:
                     st.write(f"• **Tipo de Medida:** {info_foc.get('Tipo')}")
@@ -198,7 +299,6 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                     st.write(f"• **Margen de Ganancia:** {info_foc.get('Ganancia_Pct')}%")
                     st.write(f"• **Último Cambio:** {info_foc.get('Fecha')}")
                     
-            # ACCIÓN: EDITAR COSTOS
             elif accion == "✏️ Editar Costos":
                 st.markdown(f"""
                     <div class='tarjeta-editar'>
@@ -206,7 +306,6 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Formulario dedicado para guardar la edición de forma segura
                 with st.form("form_edicion_panel"):
                     ce1, ce2, ce3 = st.columns(3)
                     nuevo_c = ce1.number_input("Costo de Proveedor ($)", min_value=0.0, value=float(info_foc.get('Costo')), format="%.2f")
@@ -231,12 +330,35 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                             st.rerun()
 
 # ==========================================
-# 🧮 VISTAS RESTANTES (TEMPORALES)
+# 📜 VISTA: 4- CATÁLOGO DE PRODUCTOS FINALES
 # ==========================================
-elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
-    st.markdown("<h2 style='color: #e9769d;'>🧮 Crear Presupuesto de Producción</h2>", unsafe_allow_html=True)
-    st.info("Módulo listo para ser enlazado con la base de datos.")
-
 elif st.session_state.menu_actual == "📜 4- Catálogo de Productos Finales":
     st.markdown("<h2 style='color: #e9769d;'>📜 Catálogo de Productos Finales</h2>", unsafe_allow_html=True)
-    st.info("Catálogo en espera.")
+    
+    if not st.session_state.productos:
+        st.info("No tienes productos guardados en el catálogo aún. Crea uno usando la pestaña '🧮 1- Crear Presupuesto'.")
+    else:
+        lista_prod = []
+        for nombre_p, info_p in st.session_state.productos.items():
+            precio_v = info_p.get("Precio_Venta", 0.0)
+            lista_prod.append({
+                "Producto Final": nombre_p,
+                "Costo total ($)": info_p.get("Costo_Produccion", 0.0),
+                "Precio de Venta ($)": precio_v,
+                "Precio en Bs.": f"Bs. {round(precio_v * st.session_state.tasa_bcv, 2)}",
+                "Fecha de Creación": info_p.get("Fecha", "No registrada")
+            })
+            
+        df_productos = pd.DataFrame(lista_prod)
+        st.dataframe(df_productos, use_container_width=True, hide_index=True)
+        
+        st.markdown("---")
+        st.markdown("### 🗑️ Eliminar Producto del Catálogo")
+        prod_eliminar = st.selectbox("Selecciona un producto si deseas sacarlo del catálogo:", ["-- Seleccionar --"] + list(st.session_state.productos.keys()))
+        
+        if prod_eliminar != "-- Seleccionar --":
+            if st.button(f"❌ Eliminar '{prod_eliminar}' permanentemente"):
+                del st.session_state.productos[prod_eliminar]
+                guardar_datos('productos.json', st.session_state.productos)
+                st.success(f"Producto '{prod_eliminar}' eliminado.")
+                st.rerun()
