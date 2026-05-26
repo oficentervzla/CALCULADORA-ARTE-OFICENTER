@@ -289,16 +289,35 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
             
             if accion == "👁️ Ver Ficha":
                 st.markdown(f"""
-                    <div class='tarjeta-ver'>
+                    <div class='tarjeta-ver':
                         <h3 style='color:#74b7d5; text-align:left; margin:0;'>📋 Ficha Técnica: {material_seleccionado}</h3>
                     </div>
                 """, unsafe_allow_html=True)
+                
+                # --- NUEVO BLOQUE EXCLUSIVO DE VINCULACIÓN (SIN TOCAR NADA MÁS) ---
+                productos_vinculados = []
+                for p_name, p_data in st.session_state.productos.items():
+                    if "Receta" in p_data:
+                        for item in p_data["Receta"]:
+                            if item.get("Material") == material_seleccionado:
+                                productos_vinculados.append(p_name)
+                                break
+                
                 cv1, cv2 = st.columns(2)
                 with cv1:
                     st.write(f"• **Tipo de Medida:** {info_foc.get('Tipo')}")
                     st.write(f"• **Marca:** {info_foc.get('Marca')}")
                     if info_foc.get('Tipo') == "Pieza (Área)":
                         st.write(f"• **Dimensiones:** {info_foc.get('Ancho')}cm x {info_foc.get('Alto')}cm")
+                    
+                    st.write("")
+                    st.markdown("**📦 Productos en los que se utiliza actualmente:**")
+                    if productos_vinculados:
+                        for prod in productos_vinculados:
+                            st.write(f"  - 🏷️ {prod}")
+                    else:
+                        st.write("  *Este material no está asignado a ningún producto final todavía.*")
+                        
                 with cv2:
                     st.write(f"• **Costo Unitario:** ${info_foc.get('Costo'):.2f}")
                     st.write(f"• **Precio Público:** ${info_foc.get('Precio'):.2f}")
@@ -448,7 +467,6 @@ elif st.session_state.menu_actual == "📜 4- Catálogo de Productos Finales":
                 else:
                     st.warning("Este producto fue guardado con una versión anterior del sistema sin registro de receta.")
                 
-                # Renderizado explícito expandido para evitar SyntaxError por multilíneas en st.markdown
                 st.write("**Resumen Financiero:**")
                 st.write(f"• **Mano de Obra Directa:** ${prod_data.get('Mano_Obra', 0.0):.2f}")
                 st.write(f"• **Margen Aplicado:** {prod_data.get('Porcentaje_Ganancia', 0.0)}%")
