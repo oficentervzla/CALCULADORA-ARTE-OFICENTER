@@ -1,118 +1,143 @@
 import streamlit as st
-import pandas as pd
 import json
 import os
 from datetime import datetime
 
-# --- CONFIGURACIÓN ---
+# Configuración de página con diseño limpio
 st.set_page_config(page_title="Sistema Art Center", layout="wide", page_icon="🎨")
 
-# --- CSS PERSONALIZADO ---
 st.markdown("""
     <style>
         .stApp { background-color: #ffffff; }
-        .titulo-principal { color: #e9769d !important; font-size: 50px; font-weight: bold; text-align: center; }
-        .frase-principal { color: #74b7d5 !important; font-size: 28px; font-style: italic; font-weight: bold; text-align: center; margin-bottom: 30px; }
-        .tarjeta-ver { background-color: #f4fafc; padding: 20px; border-radius: 12px; border: 2px solid #74b7d5; }
-        .tarjeta-editar { background-color: #fff9fb; padding: 20px; border-radius: 12px; border: 2px solid #e9769d; }
+        h1, h2, h3 { font-family: 'Arial', sans-serif; text-align: center; }
+        .titulo-principal { color: #e9769d !important; font-size: 50px; font-weight: bold; margin-bottom: 5px; }
+        .frase-principal { color: #74b7d5 !important; font-size: 28px; font-style: italic; font-weight: bold; margin-bottom: 30px; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- FUNCIONES BASE ---
-def cargar_json(archivo):
+# --- FUNCIONES DE ALMACENAMIENTO ---
+def guardar_datos(archivo, datos):
+    with open(archivo, 'w', encoding='utf-8') as f:
+        json.dump(datos, f, ensure_ascii=False, indent=4)
+
+def cargar_datos(archivo):
     if os.path.exists(archivo):
-        with open(archivo, 'r', encoding='utf-8') as f: return json.load(f)
+        try:
+            with open(archivo, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return {}
     return {}
 
-def guardar_json(archivo, datos):
-    with open(archivo, 'w', encoding='utf-8') as f: json.dump(datos, f, ensure_ascii=False, indent=4)
+# --- INICIALIZACIÓN DE DATOS ---
+if 'materiales' not in st.session_state:
+    st.session_state.materiales = cargar_datos('materiales.json')
+if 'productos' not in st.session_state:
+    st.session_state.productos = cargar_datos('productos.json')
+if 'tasa_bcv' not in st.session_state:
+    st.session_state.tasa_bcv = 36.50
+if 'menu_actual' not in st.session_state:
+    st.session_state.menu_actual = "🏠 Menú Principal"
 
-# --- INICIALIZACIÓN ---
-if 'materiales' not in st.session_state: st.session_state.materiales = cargar_json('materiales.json')
-if 'productos' not in st.session_state: st.session_state.productos = cargar_json('productos.json')
-if 'tasa_bcv' not in st.session_state: st.session_state.tasa_bcv = 36.50
-if 'menu_actual' not in st.session_state: st.session_state.menu_actual = "🏠 Menú Principal"
+# --- BARRA DE NAVEGACIÓN SUPERIOR (COMO TUS FOTOS) ---
+opciones_menu = [
+    "🏠 Menú Principal", 
+    "🧮 1- Crear Presupuesto", 
+    "➕ 2- Crear Material", 
+    "🎒 3- Verificar Panel de Materiales", 
+    "📜 4- Catálogo de Productos Finales"
+]
 
-# --- BARRA DE NAVEGACIÓN SUPERIOR ---
-opciones = ["🏠 Menú Principal", "🧮 1- Crear Presupuesto", "➕ 2- Crear Material", "🎒 3- Verificar Panel de Materiales", "📜 4- Catálogo de Productos Finales"]
-cols = st.columns(5)
-for i, op in enumerate(opciones):
-    if cols[i].button(op, use_container_width=True, type="primary" if st.session_state.menu_actual == op else "secondary"):
-        st.session_state.menu_actual = op
-        st.rerun()
+cols_nav = st.columns(5)
+for idx, opcion in enumerate(opciones_menu):
+    with cols_nav[idx]:
+        es_activo = st.session_state.menu_actual == opcion
+        tipo_estilo = "primary" if es_activo else "secondary"
+        if st.button(opcion, key=f"nav_sup_{idx}", use_container_width=True, type=tipo_estilo):
+            st.session_state.menu_actual = opcion
+            st.rerun()
+
 st.divider()
 
-# --- 1. MENÚ PRINCIPAL ---
+# ==========================================
+# 🏠 VISTA: MENÚ PRINCIPAL
+# ==========================================
 if st.session_state.menu_actual == "🏠 Menú Principal":
     st.markdown("<p class='titulo-principal'>ART CENTER</p>", unsafe_allow_html=True)
     st.markdown("<p class='frase-principal'>¿Qué vamos a crear hoy?</p>", unsafe_allow_html=True)
-    # Placeholder para logo: st.image("logo.png") 
-    st.session_state.tasa_bcv = st.number_input("Tasa BCV del día (Bs.)", value=float(st.session_state.tasa_bcv), format="%.2f")
+    
+    st.subheader("🇻🇪 Control Cambiario")
+    st.session_state.tasa_bcv = st.number_input("Tasa BCV del día (Bs.)", min_value=1.0, value=float(st.session_state.tasa_bcv), step=0.10)
 
-# --- 2. CREAR MATERIAL ---
+# ==========================================
+# ➕ VISTA: 2- CREAR MATERIAL
+# ==========================================
 elif st.session_state.menu_actual == "➕ 2- Crear Material":
-    st.subheader("➕ Registrar Nuevo Insumo")
-    with st.form("form_mat"):
-        nombre = st.text_input("Nombre del Material")
-        tipo = st.selectbox("Tipo", ["Pieza (Área)", "Unidad (Cantidad)"])
-        costo = st.number_input("Costo Proveedor ($)", min_value=0.0, format="%.2f")
-        precio = st.number_input("Precio Venta ($)", min_value=0.0, format="%.2f")
-        marca = st.text_input("Marca (Opcional)")
-        if tipo == "Pieza (Área)":
-            ancho = st.number_input("Ancho (cm)", min_value=0.1)
-            alto = st.number_input("Alto (cm)", min_value=0.1)
-        else:
-            ancho, alto = 1.0, 1.0
+    st.markdown("<h2 style='color: #e9769d;'>➕ Registrar Nuevo Insumo / Material</h2>", unsafe_allow_html=True)
+    
+    # Formulario controlado para evitar reinicios innecesarios
+    with st.form("formulario_nuevo_material", clear_on_submit=True):
+        nombre = st.text_input("Nombre del Material (Ej: Cartulina Escolar, Silicón)", placeholder="Escribe el nombre aquí...")
         
-        if st.form_submit_button("Guardar Material"):
-            st.session_state.materiales[nombre] = {
-                "Tipo": tipo, "Costo": costo, "Precio": precio, "Marca": marca,
-                "Ancho": ancho, "Alto": alto, "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
-            }
-            guardar_json('materiales.json', st.session_state.materiales)
-            st.success(f"Material {nombre} guardado.")
-
-# --- 3. PANEL DE MATERIALES (GESTIÓN) ---
-elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
-    st.subheader("🎒 Inventario")
-    if not st.session_state.materiales:
-        st.info("No hay materiales.")
-    else:
-        # Selector de material para gestionar
-        mat_sel = st.selectbox("Selecciona un material:", list(st.session_state.materiales.keys()))
-        info = st.session_state.materiales[mat_sel]
+        # Tipo de cálculo usando checkboxes limpios
+        es_pieza = st.checkbox("¿Es una Pieza con medidas específicas? (Marcar si se cuenta por área en cm)", value=False)
         
         c1, c2 = st.columns(2)
-        if c1.button("👁️ Ver Resumen"):
-            st.session_state.accion = "ver"
-        if c2.button("✏️ Editar"):
-            st.session_state.accion = "editar"
+        with c1:
+            costo = st.number_input("Costo de Proveedor ($)", min_value=0.0, step=0.01, format="%.2f")
+            marca = st.text_input("Marca (Opcional)", placeholder="Genérica")
+        with c2:
+            precio = st.number_input("Precio de Tienda ($)", min_value=0.0, step=0.01, format="%.2f")
             
-        if 'accion' in st.session_state:
-            if st.session_state.accion == "ver":
-                st.markdown(f"<div class='tarjeta-ver'><h3>{mat_sel}</h3><p>Costo: ${info['Costo']} | Precio: ${info['Precio']}</p></div>", unsafe_allow_html=True)
-                # Simulación PDF
-                st.download_button("📥 Descargar PDF", f"Resumen {mat_sel}: {info}", file_name="resumen.pdf")
+        # Campos condicionales según el tipo elegido
+        if es_pieza:
+            st.markdown("##### 📏 Medidas de la Pieza Completa")
+            cx, cy = st.columns(2)
+            ancho = cx.number_input("Ancho Total (cm)", min_value=0.1, step=0.1, value=1.0)
+            alto = cy.number_input("Alto Total (cm)", min_value=0.1, step=0.1, value=1.0)
+            tipo_final = "Pieza (Área)"
+        else:
+            ancho, alto = 1.0, 1.0
+            tipo_final = "Unidad (Cantidad)"
             
-            elif st.session_state.accion == "editar":
-                with st.form("edit_mat"):
-                    n_costo = st.number_input("Nuevo Costo", value=float(info['Costo']))
-                    n_precio = st.number_input("Nuevo Precio", value=float(info['Precio']))
-                    actualizar_todo = st.checkbox("Aplicar cambios a productos vinculados")
-                    if st.form_submit_button("Guardar Cambios"):
-                        st.session_state.materiales[mat_sel].update({"Costo": n_costo, "Precio": n_precio, "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")})
-                        guardar_json('materiales.json', st.session_state.materiales)
-                        if actualizar_todo:
-                            # Lógica de actualización de productos...
-                            pass
-                        st.success("Actualizado")
+        # Botón de envío del formulario
+        guardar = st.form_submit_button("Guardar Material en Inventario")
+        
+        if guardar:
+            if not nombre.strip():
+                st.error("Por favor, introduce un nombre válido para el material.")
+            elif precio <= 0:
+                st.error("El precio de venta debe ser mayor a 0.")
+            else:
+                # Calcular porcentaje de ganancia básico expuesto en el panel
+                ganancia_porcentaje = ((precio - costo) / precio * 100) if precio > 0 else 0.0
+                
+                # Guardar en el diccionario global
+                st.session_state.materiales[nombre] = {
+                    "Tipo": tipo_final,
+                    "Ancho": float(ancho),
+                    "Alto": float(alto),
+                    "Costo": float(costo),
+                    "Precio": float(precio),
+                    "Ganancia_Pct": round(ganancia_porcentaje, 1),
+                    "Marca": marca if marca else "Genérica",
+                    "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
+                }
+                # Guardar físicamente en el archivo de texto JSON
+                guardar_datos('materiales.json', st.session_state.materiales)
+                st.success(f"🎉 ¡Material '{nombre}' registrado con éxito con una ganancia del {ganancia_porcentaje:.1f}%!")
 
-# --- 4. CREAR PRESUPUESTO ---
+# ==========================================
+# 🧮 VISTAS RESTANTES (PLUGINS VACÍOS TEMPORALES)
+# ==========================================
 elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
-    st.subheader("🧮 Nuevo Presupuesto")
-    st.write("Funcionalidad en desarrollo - Usa el panel lateral para cambiar de módulo.")
+    st.markdown("<h2 style='color: #e9769d;'>🧮 Crear Presupuesto de Producción</h2>", unsafe_allow_html=True)
+    st.info("Módulo listo para ser enlazado con la base de datos.")
 
-# --- 5. CATÁLOGO ---
+elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
+    st.markdown("<h2 style='color: #e9769d;'>🎒 Panel de Control de Inventario</h2>", unsafe_allow_html=True)
+    st.info("Aquí mostraremos la lista de lo que vayas guardando.")
+
 elif st.session_state.menu_actual == "📜 4- Catálogo de Productos Finales":
-    st.subheader("📜 Catálogo")
-    st.write("Visualización de productos guardados.")
+    st.markdown("<h2 style='color: #e9769d;'>📜 Catálogo de Productos Finales</h2>", unsafe_allow_html=True)
+    st.info("Catálogo en espera.")
