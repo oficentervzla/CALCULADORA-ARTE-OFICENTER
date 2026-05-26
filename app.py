@@ -53,8 +53,6 @@ if 'tasa_bcv' not in st.session_state:
     st.session_state.tasa_bcv = 36.50
 if 'menu_actual' not in st.session_state:
     st.session_state.menu_actual = "🏠 Menú Principal"
-
-# Inicializar carrito de presupuesto temporal si no existe
 if 'carrito_presupuesto' not in st.session_state:
     st.session_state.carrito_presupuesto = []
 
@@ -85,17 +83,12 @@ if st.session_state.menu_actual == "🏠 Menú Principal":
     st.markdown("<p class='titulo-principal'>ART CENTER</p>", unsafe_allow_html=True)
     st.markdown("<p class='frase-principal'>¿Qué vamos a crear hoy?</p>", unsafe_allow_html=True)
     
-    st.subheader("🇻🇪 Control Cambiario")
-    st.session_state.tasa_bcv = st.number_input("Tasa BCV del día (Bs.)", min_value=1.0, value=float(st.session_state.tasa_bcv), step=0.10)
-    
-    st.markdown("---")
-    # Resumen rápido en el inicio
     c_m1, c_m2 = st.columns(2)
     c_m1.metric("Materiales en Inventario", len(st.session_state.materiales))
     c_m2.metric("Productos en Catálogo", len(st.session_state.productos))
 
 # ==========================================
-# 🧮 VISTA: 1- CREAR PRESUPUESTO
+# 🧮 VISTA: 1- CREAR PRESUPUESTO (MODIFICADA)
 # ==========================================
 elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
     st.markdown("<h2 style='color: #e9769d;'>🧮 Calculadora de Presupuestos</h2>", unsafe_allow_html=True)
@@ -103,6 +96,10 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
     if not st.session_state.materiales:
         st.warning("Primero debes registrar materiales en la pestaña '➕ 2- Crear Material' para poder presupuestar.")
     else:
+        # Colocamos la Tasa BCV aquí arriba, bien visible en el módulo de presupuesto
+        st.session_state.tasa_bcv = st.number_input("💵 Tasa BCV para este presupuesto (Bs.)", min_value=1.0, value=float(st.session_state.tasa_bcv), step=0.10)
+        st.divider()
+        
         col_p1, col_p2 = st.columns([1, 1])
         
         with col_p1:
@@ -110,24 +107,27 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
             mat_seleccionado = st.selectbox("Selecciona el material:", list(st.session_state.materiales.keys()))
             info_m = st.session_state.materiales[mat_seleccionado]
             
-            # Formulario según el tipo de material escogido
+            st.markdown("##### ✏️ Costos Base del Material (Puedes cambiarlos para este presupuesto si deseas):")
+            c_ed1, c_ed2 = st.columns(2)
+            # Trae los valores guardados pero te deja editarlos al momento
+            costo_editado = c_ed1.number_input("Costo Proveedor ($)", min_value=0.0, value=float(info_m.get('Costo', 0.0)), step=0.01, format="%.2f", key="costo_temp")
+            precio_editado = c_ed2.number_input("Precio Tienda ($)", min_value=0.0, value=float(info_m.get('Precio', 0.0)), step=0.01, format="%.2f", key="precio_temp")
+            
+            # Formulario según el tipo de cálculo
             if info_m["Tipo"] == "Pieza (Área)":
-                st.info(f"Este material se cuenta por área. Tamaño original: {info_m['Ancho']}x{info_m['Alto']} cm.")
+                st.info(f"Medidas de la pieza original: {info_m['Ancho']}x{info_m['Alto']} cm.")
                 ancho_usar = st.number_input("Ancho a usar (cm)", min_value=0.1, max_value=float(info_m['Ancho']), value=1.0, step=0.1)
                 alto_usar = st.number_input("Alto a usar (cm)", min_value=0.1, max_value=float(info_m['Alto']), value=1.0, step=0.1)
                 
-                # Calcular costo proporcional del área usada
                 area_total = info_m['Ancho'] * info_m['Alto']
                 area_usar = ancho_usar * alto_usar
-                costo_proporcional = (info_m['Costo'] / area_total) * area_usar
-                precio_proporcional = (info_m['Precio'] / area_total) * area_usar
-                cantidad_items = 1.0
+                costo_proporcional = (costo_editado / area_total) * area_usar
+                precio_proporcional = (precio_editado / area_total) * area_usar
                 descripcion_uso = f"{ancho_usar}x{alto_usar} cm"
             else:
-                st.info(f"Este material se cuenta por unidades individuales.")
                 cantidad_items = st.number_input("Cantidad de unidades a usar", min_value=1, step=1, value=1)
-                costo_proporcional = info_m['Costo'] * cantidad_items
-                precio_proporcional = info_m['Precio'] * cantidad_items
+                costo_proporcional = costo_editado * cantidad_items
+                precio_proporcional = precio_editado * cantidad_items
                 descripcion_uso = f"{cantidad_items} und"
                 
             if st.button("➕ Añadir este material al presupuesto"):
@@ -145,38 +145,40 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
             if not st.session_state.carrito_presupuesto:
                 st.write("El presupuesto está vacío. Añade materiales a la izquierda.")
                 total_costo_materiales = 0.0
-                total_precio_materiales = 0.0
             else:
                 df_carrito = pd.DataFrame(st.session_state.carrito_presupuesto)
                 st.dataframe(df_carrito, use_container_width=True, hide_index=True)
                 
                 total_costo_materiales = df_carrito["Costo Parcial"].sum()
-                total_precio_materiales = df_carrito["Precio Parcial"].sum()
                 
                 if st.button("🗑️ Vaciar materiales del diseño"):
                     st.session_state.carrito_presupuesto = []
                     st.rerun()
             
             st.markdown("---")
-            st.markdown("### 🛠️ Mano de Obra y Nombre")
+            st.markdown("### 🛠️ Mano de Obra y Ganancia")
             nombre_producto = st.text_input("Nombre del Producto Final (Ej: Agenda Personalizada)", placeholder="Dale un nombre al producto...")
             costo_mano_obra = st.number_input("Costo de Mano de Obra Directa ($)", min_value=0.0, step=0.50, value=0.0)
             
-            # CÁLCULOS FINALES INTERNOS
-            costo_produccion_total = total_costo_materiales + costo_mano_obra
-            precio_sugerido_tienda = total_precio_materiales + (costo_mano_obra * 2.0) # Margen sugerido sobre la mano de obra
-            ganancia_neta = precio_sugerido_tienda - costo_produccion_total
+            # NUEVO MARGEN DE GANANCIA MANUAL SOLICITADO
+            porcentaje_ganancia = st.number_input("Margen de Ganancia Deseado (%)", min_value=0.0, max_value=500.0, value=50.0, step=5.0)
             
-            precio_bs = precio_sugerido_tienda * st.session_state.tasa_bcv
+            # CÁLCULOS FINALES CON MARGEN MANUAL
+            costo_produccion_total = total_costo_materiales + costo_mano_obra
+            
+            # Fórmula matemática limpia: suma el costo total y le aplica tu margen de ganancia elegido
+            precio_final_venta = costo_produccion_total * (1 + (porcentaje_ganancia / 100))
+            ganancia_neta = precio_final_venta - costo_produccion_total
+            precio_bs = precio_final_venta * st.session_state.tasa_bcv
             
             st.markdown("---")
             st.markdown(f"""
                 <div class='tarjeta-resultado'>
                     <h4 style='color:#4caf50; margin:0;'>💰 RESULTADO DE COSTOS</h4>
                     <p style='margin:5px 0;'>• <b>Costo de Producción:</b> ${costo_produccion_total:.2f}</p>
-                    <p style='margin:5px 0; font-size:20px; color:#e9769d;'>• <b>Precio Venta Sugerido: ${precio_sugerido_tienda:.2f}</b></p>
-                    <p style='margin:5px 0; font-weight:bold; color:#74b7d5;'>• Precio en Bolívares: Bs. {precio_bs:.2f}</p>
-                    <p style='margin:5px 0; font-size:12px; color:gray;'>Ganancia estimada: ${ganancia_neta:.2f}</p>
+                    <p style='margin:5px 0; font-size:22px; color:#e9769d;'>• <b>Precio Final de Venta: ${precio_final_venta:.2f}</b></p>
+                    <p style='margin:5px 0; font-weight:bold; color:#74b7d5;'>• Precio Final en Bolívares: Bs. {precio_bs:.2f}</p>
+                    <p style='margin:5px 0; font-size:13px; color:gray;'>Tu ganancia limpia: ${ganancia_neta:.2f} ({porcentaje_ganancia}%)</p>
                 </div>
             """, unsafe_allow_html=True)
             
@@ -188,12 +190,12 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
                 else:
                     st.session_state.productos[nombre_producto] = {
                         "Costo_Produccion": round(costo_produccion_total, 2),
-                        "Precio_Venta": round(precio_sugerido_tienda, 2),
+                        "Precio_Venta": round(precio_final_venta, 2),
                         "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
                     }
                     guardar_datos('productos.json', st.session_state.productos)
-                    st.session_state.carrito_presupuesto = [] # Limpiar carrito
-                    st.success(f"🎉 ¡'{nombre_producto}' se ha guardado en el Catálogo de Productos Finales!")
+                    st.session_state.carrito_presupuesto = [] # Limpiar la mesa de trabajo
+                    st.success(f"🎉 ¡'{nombre_producto}' se ha guardado exitosamente en tu catálogo!")
                     st.rerun()
 
 # ==========================================
