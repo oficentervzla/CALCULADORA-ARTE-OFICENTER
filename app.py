@@ -88,7 +88,7 @@ if st.session_state.menu_actual == "🏠 Menú Principal":
     c_m2.metric("Productos en Catálogo", len(st.session_state.productos))
 
 # ==========================================
-# 🧮 VISTA: 1- CREAR PRESUPUESTO (MODIFICADA)
+# 🧮 VISTA: 1- CREAR PRESUPUESTO
 # ==========================================
 elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
     st.markdown("<h2 style='color: #e9769d;'>🧮 Calculadora de Presupuestos</h2>", unsafe_allow_html=True)
@@ -96,7 +96,6 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
     if not st.session_state.materiales:
         st.warning("Primero debes registrar materiales en la pestaña '➕ 2- Crear Material' para poder presupuestar.")
     else:
-        # Colocamos la Tasa BCV aquí arriba, bien visible en el módulo de presupuesto
         st.session_state.tasa_bcv = st.number_input("💵 Tasa BCV para este presupuesto (Bs.)", min_value=1.0, value=float(st.session_state.tasa_bcv), step=0.10)
         st.divider()
         
@@ -109,11 +108,9 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
             
             st.markdown("##### ✏️ Costos Base del Material (Puedes cambiarlos para este presupuesto si deseas):")
             c_ed1, c_ed2 = st.columns(2)
-            # Trae los valores guardados pero te deja editarlos al momento
             costo_editado = c_ed1.number_input("Costo Proveedor ($)", min_value=0.0, value=float(info_m.get('Costo', 0.0)), step=0.01, format="%.2f", key="costo_temp")
             precio_editado = c_ed2.number_input("Precio Tienda ($)", min_value=0.0, value=float(info_m.get('Precio', 0.0)), step=0.01, format="%.2f", key="precio_temp")
             
-            # Formulario según el tipo de cálculo
             if info_m["Tipo"] == "Pieza (Área)":
                 st.info(f"Medidas de la pieza original: {info_m['Ancho']}x{info_m['Alto']} cm.")
                 ancho_usar = st.number_input("Ancho a usar (cm)", min_value=0.1, max_value=float(info_m['Ancho']), value=1.0, step=0.1)
@@ -159,14 +156,9 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
             st.markdown("### 🛠️ Mano de Obra y Ganancia")
             nombre_producto = st.text_input("Nombre del Producto Final (Ej: Agenda Personalizada)", placeholder="Dale un nombre al producto...")
             costo_mano_obra = st.number_input("Costo de Mano de Obra Directa ($)", min_value=0.0, step=0.50, value=0.0)
-            
-            # NUEVO MARGEN DE GANANCIA MANUAL SOLICITADO
             porcentaje_ganancia = st.number_input("Margen de Ganancia Deseado (%)", min_value=0.0, max_value=500.0, value=50.0, step=5.0)
             
-            # CÁLCULOS FINALES CON MARGEN MANUAL
             costo_produccion_total = total_costo_materiales + costo_mano_obra
-            
-            # Fórmula matemática limpia: suma el costo total y le aplica tu margen de ganancia elegido
             precio_final_venta = costo_produccion_total * (1 + (porcentaje_ganancia / 100))
             ganancia_neta = precio_final_venta - costo_produccion_total
             precio_bs = precio_final_venta * st.session_state.tasa_bcv
@@ -194,7 +186,7 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
                         "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
                     }
                     guardar_datos('productos.json', st.session_state.productos)
-                    st.session_state.carrito_presupuesto = [] # Limpiar la mesa de trabajo
+                    st.session_state.carrito_presupuesto = []
                     st.success(f"🎉 ¡'{nombre_producto}' se ha guardado exitosamente en tu catálogo!")
                     st.rerun()
 
@@ -248,7 +240,7 @@ elif st.session_state.menu_actual == "➕ 2- Crear Material":
                 st.success(f"🎉 ¡Material '{nombre}' registrado con éxito!")
 
 # ==========================================
-# 🎒 VISTA: 3- VERIFICAR PANEL DE MATERIALES
+# 🎒 VISTA: 3- VERIFICAR PANEL DE MATERIALES (CORREGIDA + ELIMINAR)
 # ==========================================
 elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
     st.markdown("<h2 style='color: #e9769d;'>🎒 Panel de Control de Inventario</h2>", unsafe_allow_html=True)
@@ -256,6 +248,9 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
     if not st.session_state.materiales:
         st.info("No hay materiales registrados en el inventario. Ve a la pestaña '➕ 2- Crear Material' para agregar el primero.")
     else:
+        # Volvemos a leer de disco para garantizar la frescura de los datos tras editar/eliminar
+        st.session_state.materiales = cargar_datos('materiales.json')
+        
         lista_tabla = []
         for nombre_m, info_m in st.session_state.materiales.items():
             lista_tabla.append({
@@ -278,7 +273,7 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
         with col_sel1:
             material_seleccionado = st.selectbox("Selecciona un material para interactuar:", ["-- Seleccionar --"] + list(st.session_state.materiales.keys()))
         with col_sel2:
-            accion = st.radio("Acción:", ["👁️ Ver Ficha", "✏️ Editar Costos"], horizontal=True)
+            accion = st.radio("Acción:", ["👁️ Ver Ficha", "✏️ Editar Costos", "❌ Eliminar Material"], horizontal=True)
             
         if material_seleccionado != "-- Seleccionar --":
             info_foc = st.session_state.materiales[material_seleccionado]
@@ -308,28 +303,45 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                     </div>
                 """, unsafe_allow_html=True)
                 
-                with st.form("form_edicion_panel"):
-                    ce1, ce2, ce3 = st.columns(3)
-                    nuevo_c = ce1.number_input("Costo de Proveedor ($)", min_value=0.0, value=float(info_foc.get('Costo')), format="%.2f")
-                    nuevo_p = ce2.number_input("Precio de Tienda ($)", min_value=0.0, value=float(info_foc.get('Precio')), format="%.2f")
-                    nueva_m = ce3.text_input("Modificar Marca", value=info_foc.get('Marca', 'Genérica'))
-                    
-                    guardar_cambios = st.form_submit_button("💾 Guardar Cambios")
-                    
-                    if guardar_cambios:
-                        if nuevo_p <= 0:
-                            st.error("El precio debe ser mayor a 0.")
-                        else:
-                            nueva_ganancia = ((nuevo_p - nuevo_c) / nuevo_p * 100) if nuevo_p > 0 else 0.0
-                            st.session_state.materiales[material_seleccionado]["Costo"] = nuevo_c
-                            st.session_state.materiales[material_seleccionado]["Precio"] = nuevo_p
-                            st.session_state.materiales[material_seleccionado]["Marca"] = nueva_m
-                            st.session_state.materiales[material_seleccionado]["Ganancia_Pct"] = round(nueva_ganancia, 1)
-                            st.session_state.materiales[material_seleccionado]["Fecha"] = datetime.now().strftime("%Y-%m-%d %H:%M")
-                            
-                            guardar_datos('materiales.json', st.session_state.materiales)
-                            st.success(f"¡Material '{material_seleccionado}' actualizado con éxito!")
-                            st.rerun()
+                # Campos fuera del form para garantizar la captura directa en variables
+                ce1, ce2, ce3 = st.columns(3)
+                nuevo_c = ce1.number_input("Costo de Proveedor ($)", min_value=0.0, value=float(info_foc.get('Costo')), format="%.2f", key="edit_costo_val")
+                nuevo_p = ce2.number_input("Precio de Tienda ($)", min_value=0.0, value=float(info_foc.get('Precio')), format="%.2f", key="edit_precio_val")
+                nueva_m = ce3.text_input("Modificar Marca", value=info_foc.get('Marca', 'Genérica'), key="edit_marca_val")
+                
+                if st.button("💾 Guardar Cambios e Inventario"):
+                    if nuevo_p <= 0:
+                        st.error("El precio debe ser mayor a 0.")
+                    else:
+                        nueva_ganancia = ((nuevo_p - nuevo_c) / nuevo_p * 100) if nuevo_p > 0 else 0.0
+                        
+                        # Actualización directa sobre el diccionario de la sesión
+                        st.session_state.materiales[material_seleccionado]["Costo"] = float(nuevo_c)
+                        st.session_state.materiales[material_seleccionado]["Precio"] = float(nuevo_p)
+                        st.session_state.materiales[material_seleccionado]["Marca"] = nueva_m
+                        st.session_state.materiales[material_seleccionado]["Ganancia_Pct"] = round(nueva_ganancia, 1)
+                        st.session_state.materiales[material_seleccionado]["Fecha"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+                        
+                        # Guardado forzoso e inmediato en el archivo físico
+                        guardar_datos('materiales.json', st.session_state.materiales)
+                        st.success(f"¡Material '{material_seleccionado}' actualizado y respaldado con éxito!")
+                        st.rerun()
+
+            elif accion == "❌ Eliminar Material":
+                st.markdown(f"""
+                    <div style='background-color: #fff5f5; padding: 20px; border-radius: 12px; border: 2px solid #ff4b4b; margin-top: 15px; margin-bottom: 15px;'>
+                        <h3 style='color:#ff4b4b; text-align:left; margin:0;'>⚠️ Zona de Peligro: Eliminar '{material_seleccionado}'</h3>
+                        <p style='margin-top:10px; color:#333;'>¿Estás seguro de que deseas quitar este material del inventario de forma permanente? Esta acción no se puede deshacer.</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                if st.button(f"💥 Confirmar Eliminación de {material_seleccionado}", type="primary"):
+                    # Remover del diccionario interno
+                    del st.session_state.materiales[material_seleccionado]
+                    # Reescribir el JSON
+                    guardar_datos('materiales.json', st.session_state.materiales)
+                    st.success(f"El material '{material_seleccionado}' ha sido eliminado correctamente de la base de datos.")
+                    st.rerun()
 
 # ==========================================
 # 📜 VISTA: 4- CATÁLOGO DE PRODUCTOS FINALES
