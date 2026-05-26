@@ -93,6 +93,8 @@ if st.session_state.menu_actual == "🏠 Menú Principal":
 elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
     st.markdown("<h2 style='color: #e9769d;'>🧮 Calculadora de Presupuestos</h2>", unsafe_allow_html=True)
     
+    st.session_state.materiales = cargar_datos('materiales.json')
+    
     if not st.session_state.materiales:
         st.warning("Primero debes registrar materiales en la pestaña '➕ 2- Crear Material' para poder presupuestar.")
     else:
@@ -109,7 +111,6 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
             st.markdown("##### ✏️ Costos Base del Material (Puedes cambiarlos para este presupuesto si deseas):")
             c_ed1, c_ed2 = st.columns(2)
             
-            # Use dynamic keys to force recalculation on selection change
             costo_editado = c_ed1.number_input("Costo Proveedor ($)", min_value=0.0, value=float(info_m.get('Costo', 0.0)), step=0.01, format="%.2f", key=f"budget_costo_{mat_seleccionado}")
             precio_editado = c_ed2.number_input("Precio Tienda ($)", min_value=0.0, value=float(info_m.get('Precio', 0.0)), step=0.01, format="%.2f", key=f"budget_precio_{mat_seleccionado}")
             
@@ -248,12 +249,13 @@ elif st.session_state.menu_actual == "➕ 2- Crear Material":
                 st.success(f"🎉 ¡Material '{nombre}' registrado con éxito!")
 
 # ==========================================
-# 🎒 VISTA: 3- VERIFICAR PANEL DE MATERIALES (CORREGIDA)
+# 🎒 VISTA: 3- VERIFICAR PANEL DE MATERIALES
 # ==========================================
 elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
     st.markdown("<h2 style='color: #e9769d;'>🎒 Panel de Control de Inventario</h2>", unsafe_allow_html=True)
     
     st.session_state.materiales = cargar_datos('materiales.json')
+    st.session_state.productos = cargar_datos('productos.json') # Forzar lectura fresca antes de editar
     
     if not st.session_state.materiales:
         st.info("No hay materiales registrados en el inventario.")
@@ -285,14 +287,12 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
         if material_seleccionado != "-- Seleccionar --":
             info_foc = st.session_state.materiales[material_seleccionado]
             
-            # --- FIX: TRIPLE QUOTES MOVED TO THE SAME LINE ---
             if accion == "👁️ Ver Ficha":
                 st.markdown(f"""
                     <div class='tarjeta-ver'>
                         <h3 style='color:#74b7d5; text-align:left; margin:0;'>📋 Ficha Técnica: {material_seleccionado}</h3>
                     </div>
                 """, unsafe_allow_html=True)
-                # --- END FIX ---
                 cv1, cv2 = st.columns(2)
                 with cv1:
                     st.write(f"• **Tipo de Medida:** {info_foc.get('Tipo')}")
@@ -305,22 +305,18 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                     st.write(f"• **Margen de Ganancia:** {info_foc.get('Ganancia_Pct')}%")
                     st.write(f"• **Último Cambio:** {info_foc.get('Fecha')}")
                     
-            # --- FIX: TRIPLE QUOTES MOVED TO THE SAME LINE ---
             elif accion == "✏️ Editar Costos":
                 st.markdown(f"""
                     <div class='tarjeta-editar'>
                         <h3 style='color:#e9769d; text-align:left; margin:0;'>✏️ Formulario de Modificación: {material_seleccionado}</h3>
                     </div>
                 """, unsafe_allow_html=True)
-                # --- END FIX ---
                 
-                # Dynamic keys needed for live edit updates
                 ce1, ce2, ce3 = st.columns(3)
                 nuevo_c = ce1.number_input("Costo de Proveedor ($)", min_value=0.0, value=float(info_foc.get('Costo')), format="%.2f", key=f"edit_costo_{material_seleccionado}")
                 nuevo_p = ce2.number_input("Precio de Tienda ($)", min_value=0.0, value=float(info_foc.get('Precio')), format="%.2f", key=f"edit_precio_{material_seleccionado}")
                 nueva_m = ce3.text_input("Modificar Marca", value=info_foc.get('Marca', 'Genérica'), key=f"edit_marca_{material_seleccionado}")
                 
-                # Checkbox inside a single container, outside form
                 act_global = st.checkbox("🔄 ¿Deseas actualizar automáticamente los costos en todos los productos finales que contienen este material?", value=True, key=f"edit_global_{material_seleccionado}")
 
                 if st.button("💾 Guardar Cambios e Inventario"):
@@ -337,7 +333,7 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                         
                         guardar_datos('materiales.json', st.session_state.materiales)
                         
-                        # (Step 2 and 3 features are fully integrated here, but we check Step 1 first)
+                        # CORRECCIÓN EN CADENA EXPLICITA: Forzar escritura y actualización inmediata del estado
                         if act_global:
                             updated_products = 0
                             for prod_nombre, prod_data in st.session_state.productos.items():
@@ -368,29 +364,29 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                                         final_production_cost = new_materials_cost + mano_obra
                                         final_sale_price = final_production_cost * (1 + (margen / 100))
                                         
-                                        prod_data["Costo_Produccion"] = round(final_production_cost, 2)
-                                        prod_data["Precio_Venta"] = round(final_sale_price, 2)
+                                        st.session_state.productos[prod_nombre]["Costo_Produccion"] = round(final_production_cost, 2)
+                                        st.session_state.productos[prod_nombre]["Precio_Venta"] = round(final_sale_price, 2)
                                         updated_products += 1
                                         
                             if updated_products > 0:
                                 guardar_datos('productos.json', st.session_state.productos)
                                 st.toast(f"Sincronizados {updated_products} productos asociados.")
                                 
-                        st.success(f"¡Material '{material_seleccionado}' actualizado y respaldado con éxito!")
+                        st.success(f"¡Material '{material_seleccionado}' y productos en cadena actualizados con éxito!")
                         st.rerun()
 
             elif accion == "❌ Eliminar Material":
                 st.markdown(f"""
                     <div style='background-color: #fff5f5; padding: 20px; border-radius: 12px; border: 2px solid #ff4b4b; margin-top: 15px; margin-bottom: 15px;'>
                         <h3 style='color:#ff4b4b; text-align:left; margin:0;'>⚠️ Zona de Peligro: Eliminar '{material_seleccionado}'</h3>
-                        <p style='margin-top:10px; color:#333;'>¿Estás seguro de que deseas quitar este material del inventario de forma permanente? Esta acción no se puede deshacer.</p>
+                        <p style='margin-top:10px; color:#333;'>¿Estás seguro de que deseas quitar este material del inventario de forma permanente?</p>
                     </div>
                 """, unsafe_allow_html=True)
                 
                 if st.button(f"💥 Confirmar Eliminación de {material_seleccionado}", type="primary"):
                     del st.session_state.materiales[material_seleccionado]
                     guardar_datos('materiales.json', st.session_state.materiales)
-                    st.success(f"El material '{material_seleccionado}' ha sido eliminado correctamente de la base de datos.")
+                    st.success(f"El material '{material_seleccionado}' ha sido eliminado.")
                     st.rerun()
 
 # ==========================================
@@ -431,7 +427,6 @@ elif st.session_state.menu_actual == "📜 4- Catálogo de Productos Finales":
         if prod_seleccionado != "-- Seleccionar --":
             prod_data = st.session_state.productos[prod_seleccionado]
             
-            # (Features for Step 3 are integrated here, but we check Step 1 first)
             if accion_p == "👁️ Ver Detalles de Receta":
                 st.markdown(f"""
                     <div class='tarjeta-ver'>
@@ -454,7 +449,6 @@ elif st.session_state.menu_actual == "📜 4- Catálogo de Productos Finales":
                 else:
                     st.warning("Este producto fue guardado con una versión anterior del sistema sin registro de receta.")
                 
-                # FINANCIAL SUMMARY (compacted block)
                 st.markdown(f"""
                     **Resumen Financiero:**
                     * **Mano de Obra Directa:** ${prod_data.get('Mano_Obra', 0.0):.2f}
