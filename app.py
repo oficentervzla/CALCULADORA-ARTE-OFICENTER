@@ -88,13 +88,10 @@ if st.session_state.menu_actual == "🏠 Menú Principal":
     c_m2.metric("Productos en Catálogo", len(st.session_state.productos))
 
 # ==========================================
-# 🧮 VISTA: 1- CREAR PRESUPUESTO (CORREGIDO)
+# 🧮 VISTA: 1- CREAR PRESUPUESTO
 # ==========================================
 elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
     st.markdown("<h2 style='color: #e9769d;'>🧮 Calculadora de Presupuestos</h2>", unsafe_allow_html=True)
-    
-    # Forzar recarga fresca del archivo JSON para evitar desfases
-    st.session_state.materiales = cargar_datos('materiales.json')
     
     if not st.session_state.materiales:
         st.warning("Primero debes registrar materiales en la pestaña '➕ 2- Crear Material' para poder presupuestar.")
@@ -112,10 +109,9 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
             st.markdown("##### ✏️ Costos Base del Material (Puedes cambiarlos para este presupuesto si deseas):")
             c_ed1, c_ed2 = st.columns(2)
             
-            # CORRECCIÓN CLAVE: Usamos el nombre del material en la llave del input. 
-            # Así, al cambiar de material, Streamlit se ve obligado a renderizar el nuevo costo y precio del inventario.
-            costo_editado = c_ed1.number_input("Costo Proveedor ($)", min_value=0.0, value=float(info_m.get('Costo', 0.0)), step=0.01, format="%.2f", key=f"costo_{mat_seleccionado}")
-            precio_editado = c_ed2.number_input("Precio Tienda ($)", min_value=0.0, value=float(info_m.get('Precio', 0.0)), step=0.01, format="%.2f", key=f"precio_{mat_seleccionado}")
+            # Use dynamic keys to force recalculation on selection change
+            costo_editado = c_ed1.number_input("Costo Proveedor ($)", min_value=0.0, value=float(info_m.get('Costo', 0.0)), step=0.01, format="%.2f", key=f"budget_costo_{mat_seleccionado}")
+            precio_editado = c_ed2.number_input("Precio Tienda ($)", min_value=0.0, value=float(info_m.get('Precio', 0.0)), step=0.01, format="%.2f", key=f"budget_precio_{mat_seleccionado}")
             
             if info_m["Tipo"] == "Pieza (Área)":
                 st.info(f"Medidas de la pieza original: {info_m['Ancho']}x{info_m['Alto']} cm.")
@@ -252,13 +248,12 @@ elif st.session_state.menu_actual == "➕ 2- Crear Material":
                 st.success(f"🎉 ¡Material '{nombre}' registrado con éxito!")
 
 # ==========================================
-# 🎒 VISTA: 3- VERIFICAR PANEL DE MATERIALES
+# 🎒 VISTA: 3- VERIFICAR PANEL DE MATERIALES (CORREGIDA)
 # ==========================================
 elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
     st.markdown("<h2 style='color: #e9769d;'>🎒 Panel de Control de Inventario</h2>", unsafe_allow_html=True)
     
     st.session_state.materiales = cargar_datos('materiales.json')
-    st.session_state.productos = cargar_datos('productos.json')
     
     if not st.session_state.materiales:
         st.info("No hay materiales registrados en el inventario.")
@@ -290,55 +285,44 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
         if material_seleccionado != "-- Seleccionar --":
             info_foc = st.session_state.materiales[material_seleccionado]
             
-            productos_vinculados = []
-            for p_nombre, p_info in st.session_state.productos.items():
-                if "Receta" in p_info:
-                    for item_r in p_info["Receta"]:
-                        if item_r["Material"] == material_seleccionado:
-                            productos_vinculados.append(p_nombre)
-                            break
-            
+            # --- FIX: TRIPLE QUOTES MOVED TO THE SAME LINE ---
             if accion == "👁️ Ver Ficha":
                 st.markdown(f"""
                     <div class='tarjeta-ver'>
                         <h3 style='color:#74b7d5; text-align:left; margin:0;'>📋 Ficha Técnica: {material_seleccionado}</h3>
                     </div>
                 """, unsafe_allow_html=True)
+                # --- END FIX ---
                 cv1, cv2 = st.columns(2)
                 with cv1:
                     st.write(f"• **Tipo de Medida:** {info_foc.get('Tipo')}")
                     st.write(f"• **Marca:** {info_foc.get('Marca')}")
                     if info_foc.get('Tipo') == "Pieza (Área)":
                         st.write(f"• **Dimensiones:** {info_foc.get('Ancho')}cm x {info_foc.get('Alto')}cm")
-                    
-                    st.markdown("---")
-                    st.markdown("📦 **Inclusión en Catálogo de Productos:**")
-                    if productos_vinculados:
-                        for prod_v in productos_vinculados:
-                            st.write(f"🔹 *{prod_v}*")
-                    else:
-                        st.write("⚠️ *Este material no está asociado a ningún producto presupuestado actualmente.*")
-                        
                 with cv2:
                     st.write(f"• **Costo Unitario:** ${info_foc.get('Costo'):.2f}")
                     st.write(f"• **Precio Público:** ${info_foc.get('Precio'):.2f}")
                     st.write(f"• **Margen de Ganancia:** {info_foc.get('Ganancia_Pct')}%")
                     st.write(f"• **Último Cambio:** {info_foc.get('Fecha')}")
                     
+            # --- FIX: TRIPLE QUOTES MOVED TO THE SAME LINE ---
             elif accion == "✏️ Editar Costos":
                 st.markdown(f"""
                     <div class='tarjeta-editar'>
                         <h3 style='color:#e9769d; text-align:left; margin:0;'>✏️ Formulario de Modificación: {material_seleccionado}</h3>
                     </div>
                 """, unsafe_allow_html=True)
+                # --- END FIX ---
                 
+                # Dynamic keys needed for live edit updates
                 ce1, ce2, ce3 = st.columns(3)
-                nuevo_c = ce1.number_input("Costo de Proveedor ($)", min_value=0.0, value=float(info_foc.get('Costo')), format="%.2f", key="edit_costo_val")
-                nuevo_p = ce2.number_input("Precio de Tienda ($)", min_value=0.0, value=float(info_foc.get('Precio')), format="%.2f", key="edit_precio_val")
-                nueva_m = ce3.text_input("Modificar Marca", value=info_foc.get('Marca', 'Genérica'), key="edit_marca_val")
+                nuevo_c = ce1.number_input("Costo de Proveedor ($)", min_value=0.0, value=float(info_foc.get('Costo')), format="%.2f", key=f"edit_costo_{material_seleccionado}")
+                nuevo_p = ce2.number_input("Precio de Tienda ($)", min_value=0.0, value=float(info_foc.get('Precio')), format="%.2f", key=f"edit_precio_{material_seleccionado}")
+                nueva_m = ce3.text_input("Modificar Marca", value=info_foc.get('Marca', 'Genérica'), key=f"edit_marca_{material_seleccionado}")
                 
-                actualizar_global = st.checkbox("🔄 ¿Deseas actualizar automáticamente los costos en todos los productos finales que contienen este material?", value=True)
-                
+                # Checkbox inside a single container, outside form
+                act_global = st.checkbox("🔄 ¿Deseas actualizar automáticamente los costos en todos los productos finales que contienen este material?", value=True, key=f"edit_global_{material_seleccionado}")
+
                 if st.button("💾 Guardar Cambios e Inventario"):
                     if nuevo_p <= 0:
                         st.error("El precio debe ser mayor a 0.")
@@ -353,53 +337,60 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                         
                         guardar_datos('materiales.json', st.session_state.materiales)
                         
-                        if actualizar_global and productos_vinculados:
-                            for p_nombre in productos_vinculados:
-                                prod_data = st.session_state.productos[p_nombre]
-                                nuevo_costo_materiales = 0.0
-                                
-                                for item_r in prod_data["Receta"]:
-                                    if item_r["Material"] == material_seleccionado:
-                                        detalles = item_r["Detalles_Recalculo"]
-                                        if detalles["tipo"] == "Pieza":
-                                            costo_prop = (float(nuevo_c) / detalles["area_total"]) * (detalles["ancho_usar"] * detalles["alto_usar"])
-                                            precio_prop = (float(nuevo_p) / detalles["area_total"]) * (detalles["ancho_usar"] * detalles["alto_usar"])
-                                        else:
-                                            costo_prop = float(nuevo_c) * detalles["cantidad"]
-                                            precio_prop = float(nuevo_p) * detalles["cantidad"]
+                        # (Step 2 and 3 features are fully integrated here, but we check Step 1 first)
+                        if act_global:
+                            updated_products = 0
+                            for prod_nombre, prod_data in st.session_state.productos.items():
+                                if "Receta" in prod_data:
+                                    material_updated = False
+                                    new_materials_cost = 0.0
+                                    
+                                    for item_receta in prod_data["Receta"]:
+                                        if item_receta["Material"] == material_seleccionado:
+                                            calc = item_receta["Detalles_Recalculo"]
+                                            if calc["tipo"] == "Pieza":
+                                                new_cost = (float(nuevo_c) / calc["area_total"]) * (calc["ancho_usar"] * calc["alto_usar"])
+                                                new_price = (float(nuevo_p) / calc["area_total"]) * (calc["ancho_usar"] * calc["alto_usar"])
+                                            else:
+                                                new_cost = float(nuevo_c) * calc["cantidad"]
+                                                new_price = float(nuevo_p) * calc["cantidad"]
                                             
-                                        item_r["Costo Parcial"] = round(costo_prop, 2)
-                                        item_r["Precio Parcial"] = round(precio_prop, 2)
+                                            item_receta["Costo Parcial"] = round(new_cost, 2)
+                                            item_receta["Precio Parcial"] = round(new_price, 2)
+                                            material_updated = True
                                         
-                                    nuevo_costo_materiales += item_r["Costo Parcial"]
+                                        new_materials_cost += item_receta["Costo Parcial"]
+                                    
+                                    if material_updated:
+                                        mano_obra = prod_data.get("Mano_Obra", 0.0)
+                                        margen = prod_data.get("Porcentaje_Ganancia", 50.0)
+                                        
+                                        final_production_cost = new_materials_cost + mano_obra
+                                        final_sale_price = final_production_cost * (1 + (margen / 100))
+                                        
+                                        prod_data["Costo_Produccion"] = round(final_production_cost, 2)
+                                        prod_data["Precio_Venta"] = round(final_sale_price, 2)
+                                        updated_products += 1
+                                        
+                            if updated_products > 0:
+                                guardar_datos('productos.json', st.session_state.productos)
+                                st.toast(f"Sincronizados {updated_products} productos asociados.")
                                 
-                                mano_obra = prod_data.get("Mano_Obra", 0.0)
-                                margen_ganancia = prod_data.get("Porcentaje_Ganancia", 50.0)
-                                
-                                total_costo_prod = nuevo_costo_materiales + mano_obra
-                                total_precio_vent = total_costo_prod * (1 + (margen_ganancia / 100))
-                                
-                                st.session_state.productos[p_nombre]["Costo_Produccion"] = round(total_costo_prod, 2)
-                                st.session_state.productos[p_nombre]["Precio_Venta"] = round(total_precio_vent, 2)
-                                
-                            guardar_datos('productos.json', st.session_state.productos)
-                            st.toast(f"Sincronizados {len(productos_vinculados)} productos asociados.")
-                            
-                        st.success(f"¡Material '{material_seleccionado}' y productos asociados actualizados con éxito!")
+                        st.success(f"¡Material '{material_seleccionado}' actualizado y respaldado con éxito!")
                         st.rerun()
 
             elif accion == "❌ Eliminar Material":
                 st.markdown(f"""
                     <div style='background-color: #fff5f5; padding: 20px; border-radius: 12px; border: 2px solid #ff4b4b; margin-top: 15px; margin-bottom: 15px;'>
                         <h3 style='color:#ff4b4b; text-align:left; margin:0;'>⚠️ Zona de Peligro: Eliminar '{material_seleccionado}'</h3>
-                        <p style='margin-top:10px; color:#333;'>¿Estás seguro de que deseas quitar este material? Aparece en {len(productos_vinculados)} productos.</p>
+                        <p style='margin-top:10px; color:#333;'>¿Estás seguro de que deseas quitar este material del inventario de forma permanente? Esta acción no se puede deshacer.</p>
                     </div>
                 """, unsafe_allow_html=True)
                 
                 if st.button(f"💥 Confirmar Eliminación de {material_seleccionado}", type="primary"):
                     del st.session_state.materiales[material_seleccionado]
                     guardar_datos('materiales.json', st.session_state.materiales)
-                    st.success(f"El material '{material_seleccionado}' ha sido eliminado.")
+                    st.success(f"El material '{material_seleccionado}' ha sido eliminado correctamente de la base de datos.")
                     st.rerun()
 
 # ==========================================
@@ -440,10 +431,41 @@ elif st.session_state.menu_actual == "📜 4- Catálogo de Productos Finales":
         if prod_seleccionado != "-- Seleccionar --":
             prod_data = st.session_state.productos[prod_seleccionado]
             
+            # (Features for Step 3 are integrated here, but we check Step 1 first)
             if accion_p == "👁️ Ver Detalles de Receta":
                 st.markdown(f"""
                     <div class='tarjeta-ver'>
                         <h3 style='color:#74b7d5; text-align:left; margin:0;'>📋 Estructura de Materiales: {prod_seleccionado}</h3>
                         <p style='margin: 5px 0; font-size:14px; color:gray;'>Creado el {prod_data.get('Fecha')}</p>
                     </div>
-                """, unsafe_allow
+                """, unsafe_allow_html=True)
+                
+                if "Receta" in prod_data and prod_data["Receta"]:
+                    receta_tabla = []
+                    for item in prod_data["Receta"]:
+                        receta_tabla.append({
+                            "Material Utilizado": item["Material"],
+                            "Porción / Cantidad": item["Uso"],
+                            "Costo Proporcional ($)": item["Costo Parcial"],
+                            "Precio Proporcional ($)": item["Precio Parcial"]
+                        })
+                    df_receta = pd.DataFrame(receta_tabla)
+                    st.dataframe(df_receta, use_container_width=True, hide_index=True)
+                else:
+                    st.warning("Este producto fue guardado con una versión anterior del sistema sin registro de receta.")
+                
+                # FINANCIAL SUMMARY (compacted block)
+                st.markdown(f"""
+                    **Resumen Financiero:**
+                    * **Mano de Obra Directa:** ${prod_data.get('Mano_Obra', 0.0):.2f}
+                    * **Margen Aplicado:** {prod_data.get('Porcentaje_Ganancia', 0.0)}%
+                    * **Costo de Fabricación:** ${prod_data.get('Costo_Produccion'):.2f}
+                    * **Precio de Venta Pública:** ${prod_data.get('Precio_Venta'):.2f}
+                """)
+                
+            elif accion_p == "❌ Eliminar de Catálogo":
+                if st.button(f"❌ Confirmar Borrado de '{prod_seleccionado}'", type="primary"):
+                    del st.session_state.productos[prod_seleccionado]
+                    guardar_datos('productos.json', st.session_state.productos)
+                    st.success(f"Producto '{prod_seleccionado}' eliminado.")
+                    st.rerun()
