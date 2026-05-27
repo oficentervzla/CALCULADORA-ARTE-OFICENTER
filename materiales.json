@@ -98,5 +98,15 @@
         "Ganancia_Pct": 46.9,
         "Marca": "PRUEBA",
         "Fecha": "2026-05-27 17:08"
+    },
+    "PRUEBA IMPRESION OPALINA": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.28,
+        "Precio": 0.48,
+        "Ganancia_Pct": 41.7,
+        "Marca": "PRUEBA",
+        "Fecha": "2026-05-27 17:09"
     }
 }
