@@ -170,22 +170,26 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
             st.markdown("##### ✏️ Costos Base del Material:")
             c_ed1, c_ed2 = st.columns(2)
             
+            # Usamos keys dinámicas basadas en el material para evitar conflictos al refrescar
             costo_editado = c_ed1.number_input("Costo Proveedor ($)", min_value=0.0, value=float(info_m.get('Costo', 0.0)), step=0.01, format="%.2f", key=f"budget_costo_{mat_seleccionado}")
             precio_editado = c_ed2.number_input("Precio Tienda ($)", min_value=0.0, value=float(info_m.get('Precio', 0.0)), step=0.01, format="%.2f", key=f"budget_precio_{mat_seleccionado}")
             
+            # --- LÓGICA CORREGIDA PARA PIEZAS Y UNIDADES ---
             if info_m["Tipo"] == "Pieza (Área)":
                 st.info(f"Medidas de la pieza original: {info_m['Ancho']}x{info_m['Alto']} cm.")
-                ancho_usar = st.number_input("Ancho a usar (cm)", min_value=0.1, max_value=float(info_m['Ancho']), value=1.0, step=0.1)
-                alto_usar = st.number_input("Alto a usar (cm)", min_value=0.1, max_value=float(info_m['Alto']), value=1.0, step=0.1)
+                ancho_usar = st.number_input("Ancho a usar (cm)", min_value=0.1, value=float(info_m['Ancho']), step=0.1, key="input_ancho_presupuesto")
+                alto_usar = st.number_input("Alto a usar (cm)", min_value=0.1, value=float(info_m['Alto']), step=0.1, key="input_alto_presupuesto")
                 
-                area_total = info_m['Ancho'] * info_m['Alto']
+                area_total = float(info_m['Ancho']) * float(info_m['Alto'])
                 area_usar = ancho_usar * alto_usar
+                
+                # Cálculo proporcional
                 costo_proporcional = (costo_editado / area_total) * area_usar
                 precio_proporcional = (precio_editado / area_total) * area_usar
                 descripcion_uso = f"{ancho_usar}x{alto_usar} cm"
                 detalles_calculo = {"tipo": "Pieza", "ancho_usar": ancho_usar, "alto_usar": alto_usar, "area_total": area_total}
             else:
-                cantidad_items = st.number_input("Cantidad de unidades a usar", min_value=1, step=1, value=1)
+                cantidad_items = st.number_input("Cantidad de unidades a usar", min_value=1, step=1, value=1, key="input_cantidad_presupuesto")
                 costo_proporcional = costo_editado * cantidad_items
                 precio_proporcional = precio_editado * cantidad_items
                 descripcion_uso = f"{cantidad_items} und"
@@ -199,7 +203,7 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
                     "Precio Parcial": round(precio_proporcional, 2),
                     "Detalles_Recalculo": detalles_calculo
                 })
-                st.session_state.status_msg_producto = None  # Limpia el aviso de guardado anterior si añade más cosas
+                st.session_state.status_msg_producto = None 
                 st.rerun()
 
         with col_p2:
@@ -254,7 +258,6 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
                         "Receta": st.session_state.carrito_presupuesto
                     }
                     
-                    # Ejecutar e inspeccionar resultado de la sincronización en la nube
                     exito_git, msg_git = guardar_datos_github('productos.json', st.session_state.productos)
                     
                     if exito_git:
@@ -271,7 +274,6 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
 elif st.session_state.menu_actual == "➕ 2- Crear Material":
     st.markdown("<h2 style='color: #e9769d;'>➕ Registrar Nuevo Insumo / Material</h2>", unsafe_allow_html=True)
     
-    # Mostrar el estado persistente arriba del formulario para que no desaparezca
     if st.session_state.status_msg_material:
         tipo, texto = st.session_state.status_msg_material
         if tipo == "success": st.success(texto)
@@ -318,7 +320,6 @@ elif st.session_state.menu_actual == "➕ 2- Crear Material":
                     "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
                 }
                 
-                # Sincronizar e inspeccionar la respuesta
                 exito_git, msg_git = guardar_datos_github('materiales.json', st.session_state.materiales)
                 
                 if exito_git:
@@ -465,10 +466,10 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                                         st.session_state.productos[prod_nombre]["Precio_Venta"] = round(final_sale_price, 2)
                                         updated_products += 1
                                         
-                            if updated_products > 0:
-                                guardar_datos_github('productos.json', st.session_state.productos)
-                                st.toast(f"Sincronizados {updated_products} productos asociados.")
-                                
+                                    if updated_products > 0:
+                                        guardar_datos_github('productos.json', st.session_state.productos)
+                                        st.toast(f"Sincronizados {updated_products} productos asociados.")
+                                        
                         st.success(f"¡Material '{material_seleccionado}' modificado con éxito y sincronizado en la nube!")
                         st.rerun()
 
