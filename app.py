@@ -33,7 +33,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- CONFIGURACIÓN DE GITHUB (PERSISTENCIA AUTOMÁTICA) ---
-GITHUB_REPO = "oficentervzla/calculadora-arte-oficenter"  # Tu repositorio
+GITHUB_REPO = "oficentervzla/calculadora-arte-oficenter"
 GITHUB_BRANCH = "main"
 
 def guardar_datos_github(archivo, datos):
@@ -71,7 +71,13 @@ def guardar_datos_github(archivo, datos):
             payload["sha"] = sha
             
         # Hacer el push (Put) a GitHub
-        requests.put(url, headers=headers, json=payload)
+        envio = requests.put(url, headers=headers, json=payload)
+        if envio.status_code in [200, 201]:
+            return True, "Sincronizado con éxito en GitHub"
+        else:
+            return False, f"Error de GitHub (Código {envio.status_code}): {envio.text}"
+    else:
+        return False, "No se detectó el 'GITHUB_TOKEN' en los Secrets de Streamlit."
 
 def cargar_datos(archivo):
     """Carga los datos desde el archivo local si existe"""
@@ -95,6 +101,12 @@ if 'menu_actual' not in st.session_state:
 if 'carrito_presupuesto' not in st.session_state:
     st.session_state.carrito_presupuesto = []
 
+# Mensajes persistentes para evitar que st.rerun los borre de golpe
+if 'status_msg_material' not in st.session_state:
+    st.session_state.status_msg_material = None
+if 'status_msg_producto' not in st.session_state:
+    st.session_state.status_msg_producto = None
+
 # --- BARRA DE NAVEGACIÓN SUPERIOR ---
 opciones_menu = [
     "🏠 Menú Principal", 
@@ -111,6 +123,9 @@ for idx, opcion in enumerate(opciones_menu):
         tipo_estilo = "primary" if es_activo else "secondary"
         if st.button(opcion, key=f"nav_sup_{idx}", use_container_width=True, type=tipo_estilo):
             st.session_state.menu_actual = opcion
+            # Limpiar mensajes viejos al cambiar de pestaña
+            st.session_state.status_msg_material = None
+            st.session_state.status_msg_producto = None
             st.rerun()
 
 st.divider()
@@ -134,6 +149,11 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
     
     st.session_state.materiales = cargar_datos('materiales.json')
     
+    if st.session_state.status_msg_producto:
+        tipo, texto = st.session_state.status_msg_producto
+        if tipo == "success": st.success(texto)
+        else: st.error(texto)
+        
     if not st.session_state.materiales:
         st.warning("Primero debes registrar materiales en la pestaña '➕ 2- Crear Material' para poder presupuestar.")
     else:
@@ -179,7 +199,7 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
                     "Precio Parcial": round(precio_proporcional, 2),
                     "Detalles_Recalculo": detalles_calculo
                 })
-                st.success(f"Añadido {mat_seleccionado} correctamente.")
+                st.session_state.status_msg_producto = None  # Limpia el aviso de guardado anterior si añade más cosas
                 st.rerun()
 
         with col_p2:
@@ -233,10 +253,16 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
                         "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
                         "Receta": st.session_state.carrito_presupuesto
                     }
-                    # Sincronización automática a GitHub al guardar
-                    guardar_datos_github('productos.json', st.session_state.productos)
+                    
+                    # Ejecutar e inspeccionar resultado de la sincronización en la nube
+                    exito_git, msg_git = guardar_datos_github('productos.json', st.session_state.productos)
+                    
+                    if exito_git:
+                        st.session_state.status_msg_producto = ("success", f"🎉 ¡'{nombre_producto}' guardado exitosamente y respaldado de forma segura en la nube de GitHub!")
+                    else:
+                        st.session_state.status_msg_producto = ("error", f"⚠️ Guardado localmente, pero falló la nube: {msg_git}")
+                        
                     st.session_state.carrito_presupuesto = []
-                    st.success(f"🎉 ¡'{nombre_producto}' se ha guardado exitosamente con su receta técnica y sincronizado en la nube!")
                     st.rerun()
 
 # ==========================================
@@ -245,6 +271,12 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
 elif st.session_state.menu_actual == "➕ 2- Crear Material":
     st.markdown("<h2 style='color: #e9769d;'>➕ Registrar Nuevo Insumo / Material</h2>", unsafe_allow_html=True)
     
+    # Mostrar el estado persistente arriba del formulario para que no desaparezca
+    if st.session_state.status_msg_material:
+        tipo, texto = st.session_state.status_msg_material
+        if tipo == "success": st.success(texto)
+        elif tipo == "error": st.error(texto)
+        
     with st.form("formulario_nuevo_material", clear_on_submit=True):
         nombre = st.text_input("Nombre del Material (Ej: Cartulina Escolar, Silicón)", placeholder="Escribe el nombre aquí...")
         es_pieza = st.checkbox("¿Es una Pieza con medidas específicas? (Marcar si se cuenta por área en cm)", value=False)
@@ -285,9 +317,16 @@ elif st.session_state.menu_actual == "➕ 2- Crear Material":
                     "Marca": marca if marca else "Genérica",
                     "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
                 }
-                # Sincronización automática a GitHub al registrar
-                guardar_datos_github('materiales.json', st.session_state.materiales)
-                st.success(f"🎉 ¡Material '{nombre}' registrado con éxito y sincronizado en la nube!")
+                
+                # Sincronizar e inspeccionar la respuesta
+                exito_git, msg_git = guardar_datos_github('materiales.json', st.session_state.materiales)
+                
+                if exito_git:
+                    st.session_state.status_msg_material = ("success", f"🎉 ¡Material '{nombre}' guardado exitosamente y RESPALDADO en la nube de GitHub para evitar pérdidas!")
+                else:
+                    st.session_state.status_msg_material = ("error", f"⚠️ Guardado de forma local, pero no se pudo subir a GitHub: {msg_git}")
+                
+                st.rerun()
 
 # ==========================================
 # 🎒 VISTA: 3- VERIFICAR PANEL DE MATERIALES
@@ -390,7 +429,6 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                         st.session_state.materiales[material_seleccionado]["Ganancia_Pct"] = round(nueva_ganancia, 1)
                         st.session_state.materiales[material_seleccionado]["Fecha"] = datetime.now().strftime("%Y-%m-%d %H:%M")
                         
-                        # Guardar material y hacer commit en GitHub
                         guardar_datos_github('materiales.json', st.session_state.materiales)
                         
                         if act_global:
@@ -428,11 +466,10 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                                         updated_products += 1
                                         
                             if updated_products > 0:
-                                # Guardar productos recalculados en cadena y hacer commit en GitHub
                                 guardar_datos_github('productos.json', st.session_state.productos)
                                 st.toast(f"Sincronizados {updated_products} productos asociados.")
                                 
-                        st.success(f"¡Material '{material_seleccionado}' y productos actualizados y respaldados con éxito!")
+                        st.success(f"¡Material '{material_seleccionado}' modificado con éxito y sincronizado en la nube!")
                         st.rerun()
 
             elif accion == "❌ Eliminar Material":
@@ -445,7 +482,6 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                 
                 if st.button(f"💥 Confirmar Eliminación de {material_seleccionado}", type="primary"):
                     del st.session_state.materiales[material_seleccionado]
-                    # Guardar cambios por eliminación y sincronizar con GitHub
                     guardar_datos_github('materiales.json', st.session_state.materiales)
                     st.success(f"El material '{material_seleccionado}' ha sido eliminado y actualizado en la nube.")
                     st.rerun()
@@ -519,7 +555,6 @@ elif st.session_state.menu_actual == "📜 4- Catálogo de Productos Finales":
             elif accion_p == "❌ Eliminar de Catálogo":
                 if st.button(f"❌ Confirmar Borrado de '{prod_seleccionado}'", type="primary"):
                     del st.session_state.productos[prod_seleccionado]
-                    # Guardar cambios y actualizar GitHub
                     guardar_datos_github('productos.json', st.session_state.productos)
                     st.success(f"Producto '{prod_seleccionado}' eliminado y sincronizado en la nube.")
                     st.rerun()
