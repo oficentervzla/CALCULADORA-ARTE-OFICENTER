@@ -78,5 +78,15 @@
         "Ganancia_Pct": 32.3,
         "Marca": "$0.55 (máquina) + $3.50 (tiempo promedio) = $4.05",
         "Fecha": "2026-05-27 17:05"
+    },
+    "DISEÑO BÁSICO": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 2.5,
+        "Precio": 5.0,
+        "Ganancia_Pct": 50.0,
+        "Marca": "Genérica",
+        "Fecha": "2026-05-27 17:05"
     }
 }
