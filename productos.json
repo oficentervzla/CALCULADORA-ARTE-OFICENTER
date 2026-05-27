@@ -1,0 +1,145 @@
+{
+    "PRESUPUESTO LIGIA DIA DE LAS MADRES": {
+        "Costo_Produccion": 81.94,
+        "Precio_Venta": 81.94,
+        "Mano_Obra": 0.0,
+        "Porcentaje_Ganancia": 0.0,
+        "Fecha": "2026-05-27 17:19",
+        "Receta": [
+            {
+                "Material": "IMPRESION EN CARTULINA OPALINA (LIGIA)",
+                "Uso": "13 und",
+                "Costo Parcial": 3.64,
+                "Precio Parcial": 13.0,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 13
+                }
+            },
+            {
+                "Material": "PORTAROSAS LIGIA (50 UNI)",
+                "Uso": "17 und",
+                "Costo Parcial": 5.78,
+                "Precio Parcial": 25.5,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 17
+                }
+            },
+            {
+                "Material": "IMPRESION EN OPALINA A COLOR (TOPPER)",
+                "Uso": "4 und",
+                "Costo Parcial": 1.12,
+                "Precio Parcial": 2.4,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 4
+                }
+            },
+            {
+                "Material": "CORTE CAMEO BASICO (5 MIN)",
+                "Uso": "4 und",
+                "Costo Parcial": 4.2,
+                "Precio Parcial": 8.0,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 4
+                }
+            },
+            {
+                "Material": "IMPRESION EN OPALINA A COLOR (TOPPER)",
+                "Uso": "1 und",
+                "Costo Parcial": 0.28,
+                "Precio Parcial": 0.6,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 1
+                }
+            },
+            {
+                "Material": "CORTE CAMEO BASICO (5 MIN)",
+                "Uso": "1 und",
+                "Costo Parcial": 1.05,
+                "Precio Parcial": 2.0,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 1
+                }
+            },
+            {
+                "Material": "IMPRESION FOTOGRÁFICA TOPPERS",
+                "Uso": "6 und",
+                "Costo Parcial": 2.04,
+                "Precio Parcial": 4.8,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 6
+                }
+            },
+            {
+                "Material": "CORTE CAMEO BASICO (5 MIN)",
+                "Uso": "6 und",
+                "Costo Parcial": 6.3,
+                "Precio Parcial": 12.0,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 6
+                }
+            },
+            {
+                "Material": "PRUEBA IMPRESION FOTO/ AUTOADHESIVA",
+                "Uso": "2 und",
+                "Costo Parcial": 0.68,
+                "Precio Parcial": 1.28,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 2
+                }
+            },
+            {
+                "Material": "PRUEBA IMPRESION OPALINA",
+                "Uso": "2 und",
+                "Costo Parcial": 0.56,
+                "Precio Parcial": 0.96,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 2
+                }
+            },
+            {
+                "Material": "CARTULINA ESCOLAR",
+                "Uso": "48.0x66.0 cm",
+                "Costo Parcial": 0.22,
+                "Precio Parcial": 0.7,
+                "Detalles_Recalculo": {
+                    "tipo": "Pieza",
+                    "ancho_usar": 48.0,
+                    "alto_usar": 66.0,
+                    "area_total": 3168.0
+                }
+            },
+            {
+                "Material": "CARTULINA ESCOLAR",
+                "Uso": "48.0x66.0 cm",
+                "Costo Parcial": 0.22,
+                "Precio Parcial": 0.7,
+                "Detalles_Recalculo": {
+                    "tipo": "Pieza",
+                    "ancho_usar": 48.0,
+                    "alto_usar": 66.0,
+                    "area_total": 3168.0
+                }
+            },
+            {
+                "Material": "DISEÑO BÁSICO",
+                "Uso": "1 und",
+                "Costo Parcial": 2.5,
+                "Precio Parcial": 10.0,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 1
+                }
+            }
+        ]
+    }
+}
