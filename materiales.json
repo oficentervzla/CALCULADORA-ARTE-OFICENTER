@@ -8,5 +8,15 @@
         "Ganancia_Pct": 72.0,
         "Marca": "AMADA BLOOM",
         "Fecha": "2026-05-27 16:48"
+    },
+    "CARTULINA ESCOLAR": {
+        "Tipo": "Pieza (Área)",
+        "Ancho": 48.0,
+        "Alto": 66.0,
+        "Costo": 0.22,
+        "Precio": 0.7,
+        "Ganancia_Pct": 68.6,
+        "Marca": "Genérica",
+        "Fecha": "2026-05-27 16:49"
     }
 }
