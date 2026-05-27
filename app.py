@@ -29,7 +29,7 @@ st.markdown("""
             border: 2px solid #4caf50; margin-top: 15px; margin-bottom: 15px;
         }
     </style>
-""", unsafe_allow_html=True)
+""", unsafe_allowed_html=True)
 
 # --- CONFIGURACIÓN DE CONEXIÓN CON GITHUB AUTOMÁTICA ---
 TOKEN = st.secrets.get("GITHUB_TOKEN", "")
@@ -42,7 +42,8 @@ def guardar_datos(archivo, datos):
             json.dump(datos, f, ensure_ascii=False, indent=4)
         return
 
-    url = f"https://api.github.com/v1/repos/{REPO}/contents/{archivo}"
+    # CORRECCIÓN DE RUTA: api.github.com/repos/
+    url = f"https://api.github.com/repos/{REPO}/contents/{archivo}"
     headers = {"Authorization": f"token {TOKEN}", "Accept": "application/vnd.github.v3+json"}
     
     contenido_json = json.dumps(datos, ensure_ascii=False, indent=4)
@@ -74,7 +75,8 @@ def cargar_datos(archivo):
             except: return {}
         return {}
 
-    url = f"https://api.github.com/v1/repos/{REPO}/contents/{archivo}"
+    # CORRECCIÓN DE RUTA: api.github.com/repos/
+    url = f"https://api.github.com/repos/{REPO}/contents/{archivo}"
     headers = {"Authorization": f"token {TOKEN}", "Accept": "application/vnd.github.v3+json"}
     
     res = requests.get(url, headers=headers)
@@ -142,7 +144,7 @@ if st.session_state.menu_actual == "🏠 Menú Principal":
 # 🧮 VISTA: 1- CREAR PRESUPUESTO
 # ==========================================
 elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
-    st.markdown("<h2 style='color: #e9769d;'>🧮 Calculadora de Presupuestos</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #e9769d;'>🧮 Calculadora de Presupuestos</h2>", unsafe_allowed_html=True)
     
     st.session_state.materiales = cargar_datos('materiales.json')
     
@@ -254,7 +256,7 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
 # ➕ VISTA: 2- CREAR MATERIAL
 # ==========================================
 elif st.session_state.menu_actual == "➕ 2- Crear Material":
-    st.markdown("<h2 style='color: #e9769d;'>➕ Registrar Nuevo Insumo / Material</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #e9769d;'>➕ Registrar Nuevo Insumo / Material</h2>", unsafe_allowed_html=True)
     
     with st.form("formulario_nuevo_material", clear_on_submit=True):
         nombre = st.text_input("Nombre del Material (Ej: Cartulina Escolar, Silicón)", placeholder="Escribe el nombre aquí...")
@@ -303,13 +305,13 @@ elif st.session_state.menu_actual == "➕ 2- Crear Material":
 # 🎒 VISTA: 3- VERIFICAR PANEL DE MATERIALES
 # ==========================================
 elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
-    st.markdown("<h2 style='color: #e9769d;'>🎒 Panel de Control de Inventario</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #e9769d;'>🎒 Panel de Control de Inventario</h2>", unsafe_allowed_html=True)
     
     st.session_state.materiales = cargar_datos('materiales.json')
     st.session_state.productos = cargar_datos('productos.json')
     
     if not st.session_state.materiales:
-        st.info("No hay materiales registrados en el inventario.")
+        st.info("No hay materiales registrados in el inventario.")
     else:
         lista_tabla = []
         for nombre_m, info_m in st.session_state.materiales.items():
@@ -341,9 +343,9 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
             if accion == "👁️ Ver Ficha":
                 st.markdown(f"""
                     <div class='tarjeta-ver'>
-                        <h3 style='color:#74b7d5; text-align:left; margin:0;'>📋 Ficha Técnica: {material_seleccionado}</h3>
+                        <h3 style='color:#74b7d5; text-align:left; margin:0;'>📋 Ficha Técnico: {material_seleccionado}</h3>
                     </div>
-                """, unsafe_allow_html=True)
+                """, unsafe_allowed_html=True)
                 
                 productos_vinculados = []
                 for p_name, p_data in st.session_state.productos.items():
@@ -379,7 +381,7 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                     <div class='tarjeta-editar'>
                         <h3 style='color:#e9769d; text-align:left; margin:0;'>✏️ Formulario de Modificación: {material_seleccionado}</h3>
                     </div>
-                """, unsafe_allow_html=True)
+                """, unsafe_allowed_html=True)
                 
                 ce1, ce2, ce3 = st.columns(3)
                 nuevo_c = ce1.number_input("Costo de Proveedor ($)", min_value=0.0, value=float(info_foc.get('Costo')), format="%.2f", key=f"edit_costo_{material_seleccionado}")
@@ -449,7 +451,7 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
                         <h3 style='color:#ff4b4b; text-align:left; margin:0;'>⚠️ Zona de Peligro: Eliminar '{material_seleccionado}'</h3>
                         <p style='margin-top:10px; color:#333;'>¿Estás seguro de que deseas quitar este material del inventario de forma permanente?</p>
                     </div>
-                """, unsafe_allow_html=True)
+                """, unsafe_allowed_html=True)
                 
                 if st.button(f"💥 Confirmar Eliminación de {material_seleccionado}", type="primary"):
                     del st.session_state.materiales[material_seleccionado]
@@ -461,7 +463,7 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
 # 📜 VISTA: 4- CATÁLOGO DE PRODUCTOS FINALES
 # ==========================================
 elif st.session_state.menu_actual == "📜 4- Catálogo de Productos Finales":
-    st.markdown("<h2 style='color: #e9769d;'>📜 Catálogo de Productos Finales</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #e9769d;'>📜 Catálogo de Productos Finales</h2>", unsafe_allowed_html=True)
     
     st.session_state.productos = cargar_datos('productos.json')
     st.session_state.tasa_bcv = float(st.session_state.tasa_bcv)
@@ -501,7 +503,7 @@ elif st.session_state.menu_actual == "📜 4- Catálogo de Productos Finales":
                         <h3 style='color:#74b7d5; text-align:left; margin:0;'>📋 Estructura de Materiales: {prod_seleccionado}</h3>
                         <p style='margin: 5px 0; font-size:14px; color:gray;'>Creado el {prod_data.get('Fecha')}</p>
                     </div>
-                """, unsafe_allow_html=True)
+                """, unsafe_allowed_html=True)
                 
                 if "Receta" in prod_data and prod_data["Receta"]:
                     receta_tabla = []
