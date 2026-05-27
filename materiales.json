@@ -88,5 +88,15 @@
         "Ganancia_Pct": 50.0,
         "Marca": "Genérica",
         "Fecha": "2026-05-27 17:05"
+    },
+    "PRUEBA IMPRESION FOTO/ AUTOADHESIVA": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.34,
+        "Precio": 0.64,
+        "Ganancia_Pct": 46.9,
+        "Marca": "PRUEBA",
+        "Fecha": "2026-05-27 17:08"
     }
 }
