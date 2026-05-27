@@ -68,5 +68,15 @@
         "Ganancia_Pct": 41.4,
         "Marca": "$0.55 (máquina) + $1.50 (tiempo) = $2.05",
         "Fecha": "2026-05-27 17:04"
+    },
+    "CORTE CAMEO FULL (15 A 40 MIN)": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 4.06,
+        "Precio": 6.0,
+        "Ganancia_Pct": 32.3,
+        "Marca": "$0.55 (máquina) + $3.50 (tiempo promedio) = $4.05",
+        "Fecha": "2026-05-27 17:05"
     }
 }
