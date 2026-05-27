@@ -108,5 +108,15 @@
         "Ganancia_Pct": 41.7,
         "Marca": "PRUEBA",
         "Fecha": "2026-05-27 17:09"
+    },
+    "IMPRESION EN OPALINA A COLOR (TOPPER)": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.28,
+        "Precio": 0.6,
+        "Ganancia_Pct": 53.3,
+        "Marca": "USO TOPPER",
+        "Fecha": "2026-05-27 17:11"
     }
 }
