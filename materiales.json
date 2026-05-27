@@ -18,5 +18,15 @@
         "Ganancia_Pct": 68.6,
         "Marca": "Genérica",
         "Fecha": "2026-05-27 16:49"
+    },
+    "IMPRESION FOTOGRAFICA PORTAROSAS (100 UNI)": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.34,
+        "Precio": 1.17,
+        "Ganancia_Pct": 70.9,
+        "Marca": "100 UNI ($0.39 C/U)",
+        "Fecha": "2026-05-27 16:52"
     }
 }
