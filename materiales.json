@@ -38,5 +38,15 @@
         "Ganancia_Pct": 81.1,
         "Marca": "50 UNI ($0.6 C/U)",
         "Fecha": "2026-05-27 16:54"
+    },
+    "PORTAROSAS LIGIA (50 UNI)": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.34,
+        "Precio": 1.5,
+        "Ganancia_Pct": 77.3,
+        "Marca": "AMADA BLOOM ($0.50 C/U)",
+        "Fecha": "2026-05-27 16:55"
     }
 }
