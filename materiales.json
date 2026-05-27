@@ -48,5 +48,15 @@
         "Ganancia_Pct": 77.3,
         "Marca": "AMADA BLOOM ($0.50 C/U)",
         "Fecha": "2026-05-27 16:55"
+    },
+    "CORTE CAMEO BASICO (5 MIN)": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 1.05,
+        "Precio": 2.0,
+        "Ganancia_Pct": 47.5,
+        "Marca": "$0.55 (máquina) + $0.50 (tiempo) = $1.05",
+        "Fecha": "2026-05-27 17:03"
     }
 }
