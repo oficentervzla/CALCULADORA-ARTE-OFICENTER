@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import json
-import os
+import requests
+import base64
 from datetime import datetime
 
 # Configuración de página con diseño limpio
@@ -30,21 +31,63 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- FUNCIONES DE ALMACENAMIENTO ---
+# --- CONFIGURACIÓN DE CONEXIÓN CON GITHUB AUTOMÁTICA ---
+TOKEN = st.secrets.get("GITHUB_TOKEN", "")
+REPO = st.secrets.get("GITHUB_REPO", "")
+
 def guardar_datos(archivo, datos):
-    with open(archivo, 'w', encoding='utf-8') as f:
-        json.dump(datos, f, ensure_ascii=False, indent=4)
+    """Guarda los datos directamente en el repositorio de GitHub de forma automática"""
+    if not TOKEN or not REPO:
+        with open(archivo, 'w', encoding='utf-8') as f:
+            json.dump(datos, f, ensure_ascii=False, indent=4)
+        return
+
+    url = f"https://api.github.com/v1/repos/{REPO}/contents/{archivo}"
+    headers = {"Authorization": f"token {TOKEN}", "Accept": "application/vnd.github.v3+json"}
+    
+    contenido_json = json.dumps(datos, ensure_ascii=False, indent=4)
+    contenido_bytes = contenido_json.encode('utf-8')
+    contenido_base64 = base64.b64encode(contenido_bytes).decode('utf-8')
+    
+    res_get = requests.get(url, headers=headers)
+    sha = None
+    if res_get.status_code == 200:
+        sha = res_get.json().get("sha")
+        
+    payload = {
+        "message": f"Actualización automática de {archivo} desde la app",
+        "content": contenido_base64
+    }
+    if sha:
+        payload["sha"] = sha
+        
+    requests.put(url, headers=headers, json=payload)
 
 def cargar_datos(archivo):
-    if os.path.exists(archivo):
+    """Carga los datos en tiempo real desde GitHub para garantizar consistencia"""
+    if not TOKEN or not REPO:
+        import os
+        if os.path.exists(archivo):
+            try:
+                with open(archivo, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except: return {}
+        return {}
+
+    url = f"https://api.github.com/v1/repos/{REPO}/contents/{archivo}"
+    headers = {"Authorization": f"token {TOKEN}", "Accept": "application/vnd.github.v3+json"}
+    
+    res = requests.get(url, headers=headers)
+    if res.status_code == 200:
         try:
-            with open(archivo, 'r', encoding='utf-8') as f:
-                return json.load(f)
+            content_b64 = res.json().get("content", "")
+            content_bytes = base64.b64decode(content_b64)
+            return json.loads(content_bytes.decode('utf-8'))
         except:
             return {}
     return {}
 
-# --- INICIALIZACIÓN DE DATOS ---
+# --- INICIALIZACIÓN DE DATOS EN MEMORIA ---
 if 'materiales' not in st.session_state:
     st.session_state.materiales = cargar_datos('materiales.json')
 if 'productos' not in st.session_state:
@@ -83,9 +126,17 @@ if st.session_state.menu_actual == "🏠 Menú Principal":
     st.markdown("<p class='titulo-principal'>ART CENTER</p>", unsafe_allow_html=True)
     st.markdown("<p class='frase-principal'>¿Qué vamos a crear hoy?</p>", unsafe_allow_html=True)
     
+    st.session_state.materiales = cargar_datos('materiales.json')
+    st.session_state.productos = cargar_datos('productos.json')
+    
     c_m1, c_m2 = st.columns(2)
     c_m1.metric("Materiales en Inventario", len(st.session_state.materiales))
     c_m2.metric("Productos en Catálogo", len(st.session_state.productos))
+    
+    if not TOKEN or not REPO:
+        st.info("⚠️ Modo local temporal: Recuerda configurar tus Secrets en Streamlit Cloud para activar el autoguardado en GitHub.")
+    else:
+        st.success("🟢 Conexión con la base de datos de GitHub activada. Tu progreso se guarda solo de forma permanente.")
 
 # ==========================================
 # 🧮 VISTA: 1- CREAR PRESUPUESTO
@@ -196,7 +247,7 @@ elif st.session_state.menu_actual == "🧮 1- Crear Presupuesto":
                     }
                     guardar_datos('productos.json', st.session_state.productos)
                     st.session_state.carrito_presupuesto = []
-                    st.success(f"🎉 ¡'{nombre_producto}' se ha guardado exitosamente con su receta técnica!")
+                    st.success(f"🎉 ¡'{nombre_producto}' se ha guardado exitosamente!")
                     st.rerun()
 
 # ==========================================
@@ -289,12 +340,11 @@ elif st.session_state.menu_actual == "🎒 3- Verificar Panel de Materiales":
             
             if accion == "👁️ Ver Ficha":
                 st.markdown(f"""
-                    <div class='tarjeta-ver':
+                    <div class='tarjeta-ver'>
                         <h3 style='color:#74b7d5; text-align:left; margin:0;'>📋 Ficha Técnica: {material_seleccionado}</h3>
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # --- NUEVO BLOQUE EXCLUSIVO DE VINCULACIÓN (SIN TOCAR NADA MÁS) ---
                 productos_vinculados = []
                 for p_name, p_data in st.session_state.productos.items():
                     if "Receta" in p_data:
