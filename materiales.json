@@ -118,5 +118,15 @@
         "Ganancia_Pct": 53.3,
         "Marca": "USO TOPPER",
         "Fecha": "2026-05-27 17:11"
+    },
+    "IMPRESION FOTOGRÁFICA TOPPERS": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.34,
+        "Precio": 0.8,
+        "Ganancia_Pct": 57.5,
+        "Marca": "TOPPERS",
+        "Fecha": "2026-05-27 17:15"
     }
 }
