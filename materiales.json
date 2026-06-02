@@ -148,5 +148,15 @@
         "Ganancia_Pct": 23.1,
         "Marca": "DECOCEL",
         "Fecha": "2026-06-02 16:18"
+    },
+    "CINTA PARA LAZO BLANCA GRUESA": {
+        "Tipo": "Pieza (Área)",
+        "Ancho": 6.0,
+        "Alto": 100.0,
+        "Costo": 0.5,
+        "Precio": 0.8,
+        "Ganancia_Pct": 37.5,
+        "Marca": "MACHU",
+        "Fecha": "2026-06-02 16:23"
     }
 }
