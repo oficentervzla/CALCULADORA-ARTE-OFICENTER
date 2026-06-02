@@ -141,5 +141,48 @@
                 }
             }
         ]
+    },
+    "CINTA PERSONALIZADA ARREGLO FLORAL 35CM": {
+        "Costo_Produccion": 2.54,
+        "Precio_Venta": 3.05,
+        "Mano_Obra": 0.0,
+        "Porcentaje_Ganancia": 20.0,
+        "Fecha": "2026-06-02 16:25",
+        "Receta": [
+            {
+                "Material": "PAPEL CONTAC DECOCEL (USO VINIL)",
+                "Uso": "10.0x10.0 cm",
+                "Costo Parcial": 0.11,
+                "Precio Parcial": 0.14,
+                "Detalles_Recalculo": {
+                    "tipo": "Pieza",
+                    "ancho_usar": 10.0,
+                    "alto_usar": 10.0,
+                    "area_total": 4600.0
+                }
+            },
+            {
+                "Material": "CORTE CAMEO BASICO (5 MIN)",
+                "Uso": "1 und",
+                "Costo Parcial": 1.05,
+                "Precio Parcial": 2.0,
+                "Detalles_Recalculo": {
+                    "tipo": "Unidad",
+                    "cantidad": 1
+                }
+            },
+            {
+                "Material": "CINTA PARA LAZO BLANCA GRUESA",
+                "Uso": "6.0x50.0 cm",
+                "Costo Parcial": 0.25,
+                "Precio Parcial": 0.4,
+                "Detalles_Recalculo": {
+                    "tipo": "Pieza",
+                    "ancho_usar": 6.0,
+                    "alto_usar": 50.0,
+                    "area_total": 600.0
+                }
+            }
+        ]
     }
 }
