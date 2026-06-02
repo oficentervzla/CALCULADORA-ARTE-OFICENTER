@@ -128,5 +128,15 @@
         "Ganancia_Pct": 57.5,
         "Marca": "TOPPERS",
         "Fecha": "2026-05-27 17:15"
+    },
+    "VINIL CPO (WATERPROOF)": {
+        "Tipo": "Pieza (Área)",
+        "Ancho": 61.0,
+        "Alto": 100.0,
+        "Costo": 3.25,
+        "Precio": 4.5,
+        "Ganancia_Pct": 27.8,
+        "Marca": "CPO COLORES SOLIDOS",
+        "Fecha": "2026-06-02 16:16"
     }
 }
