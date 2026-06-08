@@ -168,5 +168,15 @@
         "Ganancia_Pct": 17.1,
         "Marca": "Genérica",
         "Fecha": "2026-06-08 02:33"
+    },
+    "CARTULINA HOLOGRÁFICA": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.68,
+        "Precio": 0.82,
+        "Ganancia_Pct": 17.1,
+        "Marca": "Genérica",
+        "Fecha": "2026-06-08 02:34"
     }
 }
