@@ -228,5 +228,15 @@
         "Ganancia_Pct": 19.9,
         "Marca": "DECOCEL X VINIL",
         "Fecha": "2026-06-08 02:40"
+    },
+    "IMPRESION BOND A COLOR": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.1,
+        "Precio": 0.25,
+        "Ganancia_Pct": 60.0,
+        "Marca": "TAMAÑO CARTA",
+        "Fecha": "2026-06-08 02:43"
     }
 }
