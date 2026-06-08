@@ -178,5 +178,15 @@
         "Ganancia_Pct": 17.1,
         "Marca": "Genérica",
         "Fecha": "2026-06-08 02:34"
+    },
+    "CARTULINA DOBLE FAZ": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.65,
+        "Precio": 0.82,
+        "Ganancia_Pct": 20.7,
+        "Marca": "Genérica",
+        "Fecha": "2026-06-08 02:35"
     }
 }
