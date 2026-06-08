@@ -208,5 +208,15 @@
         "Ganancia_Pct": 44.4,
         "Marca": "30CM",
         "Fecha": "2026-06-08 02:37"
+    },
+    "BARRA DE SILICON FINA INDIVIDUAL": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.16,
+        "Precio": 0.3,
+        "Ganancia_Pct": 46.7,
+        "Marca": "INDIVIDUAL",
+        "Fecha": "2026-06-08 02:37"
     }
 }
