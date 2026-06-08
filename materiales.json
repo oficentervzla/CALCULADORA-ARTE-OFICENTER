@@ -158,5 +158,15 @@
         "Ganancia_Pct": 37.5,
         "Marca": "MACHU",
         "Fecha": "2026-06-02 16:23"
+    },
+    "CARTULINA METALIZADA": {
+        "Tipo": "Pieza (Área)",
+        "Ancho": 50.0,
+        "Alto": 70.0,
+        "Costo": 0.68,
+        "Precio": 0.82,
+        "Ganancia_Pct": 17.1,
+        "Marca": "Genérica",
+        "Fecha": "2026-06-08 02:33"
     }
 }
