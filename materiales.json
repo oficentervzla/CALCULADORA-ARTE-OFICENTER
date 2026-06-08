@@ -218,5 +218,15 @@
         "Ganancia_Pct": 19.0,
         "Marca": "INDIVIDUAL",
         "Fecha": "2026-06-08 02:38"
+    },
+    "PAPEL CONTACT METALIZADO (USO TIPO VINIL) X METRO": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 4.5,
+        "Precio": 5.62,
+        "Ganancia_Pct": 19.9,
+        "Marca": "DECOCEL X VINIL",
+        "Fecha": "2026-06-08 02:40"
     }
 }
