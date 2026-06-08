@@ -218,5 +218,15 @@
         "Ganancia_Pct": 46.7,
         "Marca": "INDIVIDUAL",
         "Fecha": "2026-06-08 02:37"
+    },
+    "BARRA DE SILICON GRUESA INDIVIDUAL": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.34,
+        "Precio": 0.42,
+        "Ganancia_Pct": 19.0,
+        "Marca": "INDIVIDUAL",
+        "Fecha": "2026-06-08 02:38"
     }
 }
