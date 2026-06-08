@@ -198,5 +198,15 @@
         "Ganancia_Pct": 20.0,
         "Marca": "Genérica",
         "Fecha": "2026-06-08 02:36"
+    },
+    "PALITOS DE ALTURA INDIVIDUAL 30CM": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.05,
+        "Precio": 0.09,
+        "Ganancia_Pct": 44.4,
+        "Marca": "30CM",
+        "Fecha": "2026-06-08 02:37"
     }
 }
