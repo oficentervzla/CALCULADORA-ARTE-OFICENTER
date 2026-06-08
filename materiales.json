@@ -139,16 +139,6 @@
         "Marca": "CPO COLORES SOLIDOS",
         "Fecha": "2026-06-02 16:16"
     },
-    "PAPEL CONTAC DECOCEL (USO VINIL)": {
-        "Tipo": "Pieza (Área)",
-        "Ancho": 46.0,
-        "Alto": 100.0,
-        "Costo": 5.0,
-        "Precio": 6.5,
-        "Ganancia_Pct": 23.1,
-        "Marca": "DECOCEL",
-        "Fecha": "2026-06-02 16:18"
-    },
     "CINTA PARA LAZO BLANCA GRUESA": {
         "Tipo": "Pieza (Área)",
         "Ancho": 6.0,
