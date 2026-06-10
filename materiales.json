@@ -248,5 +248,15 @@
         "Ganancia_Pct": 20.7,
         "Marca": "100X70CM",
         "Fecha": "2026-06-10 14:55"
+    },
+    "CINTA DE TELA TAUROS X METRO": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 0.3,
+        "Precio": 0.45,
+        "Ganancia_Pct": 33.3,
+        "Marca": "TAUROS",
+        "Fecha": "2026-06-10 14:55"
     }
 }
