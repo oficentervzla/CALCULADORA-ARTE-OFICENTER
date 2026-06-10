@@ -239,16 +239,6 @@
         "Marca": "TAMAÑO CARTA",
         "Fecha": "2026-06-08 02:43"
     },
-    "SULFATO 100X70CM": {
-        "Tipo": "Unidad (Cantidad)",
-        "Ancho": 1.0,
-        "Alto": 1.0,
-        "Costo": 1.19,
-        "Precio": 1.5,
-        "Ganancia_Pct": 20.7,
-        "Marca": "100X70CM",
-        "Fecha": "2026-06-10 14:55"
-    },
     "CINTA DE TELA TAUROS X METRO": {
         "Tipo": "Unidad (Cantidad)",
         "Ancho": 1.0,
