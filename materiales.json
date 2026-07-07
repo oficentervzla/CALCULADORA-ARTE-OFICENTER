@@ -268,5 +268,15 @@
         "Ganancia_Pct": 20.7,
         "Marca": "Genérica",
         "Fecha": "2026-06-10 14:59"
+    },
+    "material prueba": {
+        "Tipo": "Unidad (Cantidad)",
+        "Ancho": 1.0,
+        "Alto": 1.0,
+        "Costo": 10.0,
+        "Precio": 5.0,
+        "Ganancia_Pct": -100.0,
+        "Marca": "Genérica",
+        "Fecha": "2026-07-07 14:16"
     }
 }
